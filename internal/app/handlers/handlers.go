@@ -52,6 +52,6 @@ func getLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Not found link with ID %s", id), http.StatusBadRequest)
 		return
 	}
-	w.Header().Add("Location", link)
+	w.Header().Set("Location", link)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
