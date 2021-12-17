@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -28,12 +29,16 @@ func BaseHandler(w http.ResponseWriter, r *http.Request) {
 
 func setLink(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	urlParam := string(b)
-	//_, err = url.ParseRequestURI(urlParam)
-	//if err != nil {
-	//	http.Error(w, "Incorrect url param", http.StatusBadRequest)
-	//	return
-	//}
+	_, err = url.ParseRequestURI(urlParam)
+	if err != nil {
+		http.Error(w, "Incorrect url param", http.StatusBadRequest)
+		return
+	}
 	randString := support.RandomString(6)
 	links[randString] = urlParam
 	w.WriteHeader(http.StatusCreated)
