@@ -31,8 +31,8 @@ func setLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var urlParam string
-	for _, val := range r.Form {
-		urlParam = val[0]
+	for key, _ := range r.Form {
+		urlParam = key
 	}
 
 	//_, err = url.ParseRequestURI(urlParam)
@@ -61,6 +61,6 @@ func getLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Not found link with ID %s", id), http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Location", "Some string")
+	w.Header().Set("Location", link)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
