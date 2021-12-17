@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/malyg1n/shortener/internal/app/support"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -26,15 +27,8 @@ func BaseHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setLink(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		return
-	}
-	var urlParam string
-	for key, _ := range r.Form {
-		urlParam = key
-	}
-
+	b, err := io.ReadAll(r.Body)
+	urlParam := string(b)
 	//_, err = url.ParseRequestURI(urlParam)
 	//if err != nil {
 	//	http.Error(w, "Incorrect url param", http.StatusBadRequest)
