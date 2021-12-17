@@ -5,7 +5,6 @@ import (
 	"github.com/malyg1n/shortener/internal/app/support"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 )
@@ -32,11 +31,6 @@ func setLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	urlParam := r.Form.Get("URL")
-	_, err = url.ParseRequestURI(urlParam)
-	if err != nil {
-		http.Error(w, "Incorrect url param", http.StatusBadRequest)
-		return
-	}
 	randString := support.RandomString(6)
 	links[randString] = urlParam
 	w.WriteHeader(http.StatusCreated)
