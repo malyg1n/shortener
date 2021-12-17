@@ -30,7 +30,16 @@ func setLink(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	urlParam := r.Form.Get("url")
+	var urlParam string
+	for _, val := range r.Form {
+		urlParam = val[0]
+	}
+
+	//_, err = url.ParseRequestURI(urlParam)
+	//if err != nil {
+	//	http.Error(w, "Incorrect url param", http.StatusBadRequest)
+	//	return
+	//}
 	randString := support.RandomString(6)
 	links[randString] = urlParam
 	w.WriteHeader(http.StatusCreated)
