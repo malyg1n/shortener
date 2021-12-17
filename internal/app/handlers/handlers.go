@@ -30,11 +30,11 @@ func setLink(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	urlParam := r.Form.Get("URL")
+	urlParam := r.Form.Get("url")
 	randString := support.RandomString(6)
 	links[randString] = urlParam
 	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write([]byte("http://localhost:8080/" + randString))
+	_, err = w.Write([]byte("http://" + r.Host + "/" + randString))
 	if err != nil {
 		log.Fatal(err)
 	}
