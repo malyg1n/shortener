@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"github.com/malyg1n/shortener/internal/app/storage"
 	"math/rand"
 	"net/url"
@@ -28,6 +29,7 @@ func NewDefaultLinksService(storage storage.LinksStorage) *DefaultLinksService {
 }
 
 func (s *DefaultLinksService) GetLink(id string) (string, error) {
+	fmt.Println(id)
 	matched, _ := regexp.MatchString(linkPattern, id)
 	if !matched {
 		return "", errors.New("invalid link ID")

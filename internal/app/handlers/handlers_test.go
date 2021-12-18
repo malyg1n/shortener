@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"github.com/malyg1n/shortener/internal/app/services"
+	"github.com/malyg1n/shortener/internal/app/storage"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -49,41 +52,41 @@ func TestBaseHandler(t *testing.T) {
 }
 
 func Test_getLink(t *testing.T) {
-	links["valid_link"] = "https://google.com"
-	links["invalid_link"] = "some text"
+	srv := services.NewDefaultLinksService(storage.NewLinksStorageMap())
+	shortLink, _ := srv.SetLink("https://google.com")
 	tests := []struct {
-		name     string
-		code     int
-		value    string
-		location string
+		name string
+		code int
+		link string
+		id   string
 	}{
 		{
-			name:     "valid link",
-			code:     307,
-			value:    links["valid_link"],
-			location: links["valid_link"],
+			name: "valid link",
+			code: 307,
+			link: "https://google.com",
+			id:   shortLink,
 		},
 		{
-			name:     "invalid link",
-			code:     400,
-			value:    links["invalid_link"],
-			location: "",
+			name: "empty link",
+			code: 400,
+			link: "",
+			id:   "",
 		},
 		{
-			name:     "empty link",
-			code:     400,
-			value:    "",
-			location: "",
-		},
-		{
-			name:     "undefined link",
-			code:     400,
-			value:    "undefined",
-			location: "",
+			name: "undefined link",
+			code: 400,
+			link: "",
+			id:   "undefined",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/"+tt.id, nil)
+			w := httptest.NewRecorder()
+			h := http.HandlerFunc(getLink)
+			h.ServeHTTP(w, request)
+			result := w.Result()
+			assert.Equal(t, tt.code, result.StatusCode)
 		})
 	}
 }
