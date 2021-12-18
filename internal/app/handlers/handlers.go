@@ -1,19 +1,20 @@
 package handlers
 
 import (
-	"fmt"
-	"github.com/malyg1n/shortener/internal/app/support"
+	"github.com/malyg1n/shortener/internal/app/services"
+	"github.com/malyg1n/shortener/internal/app/storage"
 	"io"
-	"log"
 	"net/http"
-	"net/url"
-	"regexp"
 	"strings"
 )
 
-const linkPattern = `[a-zA-Z0-9]+`
+var (
+	service services.LinksService
+)
 
-var links = make(map[string]string)
+func init() {
+	service = services.NewDefaultLinksService(storage.NewLinksStorageMap())
+}
 
 // BaseHandler ...
 func BaseHandler(w http.ResponseWriter, r *http.Request) {
@@ -33,31 +34,21 @@ func setLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	urlParam := string(b)
-	_, err = url.ParseRequestURI(urlParam)
+	linkID, err := service.SetLink(string(b))
 	if err != nil {
-		http.Error(w, "Incorrect url param", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	randString := support.RandomString(6)
-	links[randString] = urlParam
+
 	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write([]byte("http://" + r.Host + "/" + randString))
-	if err != nil {
-		log.Fatal(err)
-	}
+	w.Write([]byte("http://" + r.Host + "/" + linkID))
 }
 
 func getLink(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/")
-	matched, _ := regexp.MatchString(linkPattern, id)
-	if !matched {
-		http.Error(w, "Invalid link ID", http.StatusBadRequest)
-		return
-	}
-	link, ok := links[id]
-	if !ok {
-		http.Error(w, fmt.Sprintf("Not found link with ID %s", id), http.StatusBadRequest)
+	link, err := service.GetLink(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Location", link)
