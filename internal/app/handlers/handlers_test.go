@@ -51,6 +51,7 @@ func Test_GetLink(t *testing.T) {
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 			res, _ := testRequest(t, handler.GetLink, http.MethodGet, "/"+tt.id, nil)
+			defer res.Body.Close()
 			if res.StatusCode != tt.code {
 				t.Errorf("Expected status code %d, got %d", tt.code, res.StatusCode)
 			}
@@ -90,6 +91,7 @@ func Test_SetLink(t *testing.T) {
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 			res, _ := testRequest(t, handler.SetLink, http.MethodPost, "/", payload)
+			defer res.Body.Close()
 			if res.StatusCode != tt.code {
 				t.Errorf("Expected status code %d, got %d", tt.code, res.StatusCode)
 			}
@@ -105,7 +107,6 @@ func testRequest(t *testing.T, handler http.HandlerFunc, method, path string, pa
 	h.ServeHTTP(w, req)
 	res := w.Result()
 	respBody, err := ioutil.ReadAll(res.Body)
-	defer res.Body.Close()
 
 	if err != nil {
 		t.Error(err.Error())
