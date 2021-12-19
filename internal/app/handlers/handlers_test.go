@@ -9,57 +9,15 @@ import (
 	"testing"
 )
 
-var handlers *BaseHandler
+var handler *BaseHandler
 
 func TestMain(m *testing.M) {
-	handlers = NewHandlers(services.NewDefaultLinksService(storage.NewLinksStorageMap()))
+	handler = NewBaseHandler(services.NewDefaultLinksService(storage.NewLinksStorageMap()))
 	m.Run()
 }
 
-func TestResolve(t *testing.T) {
-	tests := []struct {
-		name   string
-		method string
-		code   int
-	}{
-		{
-			"get",
-			"GET",
-			400,
-		},
-		{
-			"post",
-			"POST",
-			400,
-		},
-		{
-			"put",
-			"PUT",
-			405,
-		},
-		{
-			"delete",
-			"DELETE",
-			405,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.method, "/", nil)
-			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handlers.Resolve)
-			h.ServeHTTP(w, request)
-			res := w.Result()
-			res.Body.Close()
-			if res.StatusCode != tt.code {
-				t.Errorf("Expected status code %d, got %d", tt.code, w.Code)
-			}
-		})
-	}
-}
-
-func Test_getLink(t *testing.T) {
-	shortLink, _ := handlers.service.SetLink("https://google.com")
+func Test_GetLink(t *testing.T) {
+	shortLink, _ := handler.service.SetLink("https://google.com")
 	tests := []struct {
 		name string
 		code int
@@ -89,7 +47,7 @@ func Test_getLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, "/"+tt.id, nil)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handlers.getLink)
+			h := http.HandlerFunc(handler.GetLink)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			res.Body.Close()
@@ -103,7 +61,7 @@ func Test_getLink(t *testing.T) {
 	}
 }
 
-func Test_setLink(t *testing.T) {
+func Test_SetLink(t *testing.T) {
 	tests := []struct {
 		name string
 		code int
@@ -130,7 +88,7 @@ func Test_setLink(t *testing.T) {
 			payload := strings.NewReader(tt.link)
 			request := httptest.NewRequest(http.MethodPost, "/", payload)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handlers.setLink)
+			h := http.HandlerFunc(handler.SetLink)
 			h.ServeHTTP(w, request)
 			res := w.Result()
 			res.Body.Close()

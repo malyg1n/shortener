@@ -11,25 +11,13 @@ type BaseHandler struct {
 	service services.LinksService
 }
 
-func NewHandlers(service services.LinksService) *BaseHandler {
+func NewBaseHandler(service services.LinksService) *BaseHandler {
 	return &BaseHandler{
 		service: service,
 	}
 }
 
-// Resolve ...
-func (bh *BaseHandler) Resolve(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		bh.getLink(w, r)
-	case http.MethodPost:
-		bh.setLink(w, r)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
-}
-
-func (bh *BaseHandler) setLink(w http.ResponseWriter, r *http.Request) {
+func (bh *BaseHandler) SetLink(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -45,7 +33,7 @@ func (bh *BaseHandler) setLink(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("http://" + r.Host + "/" + linkID))
 }
 
-func (bh *BaseHandler) getLink(w http.ResponseWriter, r *http.Request) {
+func (bh *BaseHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/")
 	link, err := bh.service.GetLink(id)
 	if err != nil {
