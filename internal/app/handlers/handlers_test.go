@@ -50,6 +50,7 @@ func TestResolve(t *testing.T) {
 			h := http.HandlerFunc(handlers.Resolve)
 			h.ServeHTTP(w, request)
 			res := w.Result()
+			res.Body.Close()
 			if res.StatusCode != tt.code {
 				t.Errorf("Expected status code %d, got %d", tt.code, w.Code)
 			}
@@ -91,6 +92,7 @@ func Test_getLink(t *testing.T) {
 			h := http.HandlerFunc(handlers.getLink)
 			h.ServeHTTP(w, request)
 			res := w.Result()
+			res.Body.Close()
 			if res.StatusCode != tt.code {
 				t.Errorf("Expected status code %d, got %d", tt.code, w.Code)
 			}
@@ -131,6 +133,7 @@ func Test_setLink(t *testing.T) {
 			h := http.HandlerFunc(handlers.setLink)
 			h.ServeHTTP(w, request)
 			res := w.Result()
+			res.Body.Close()
 			if res.StatusCode != tt.code {
 				t.Errorf("Expected status code %d, got %d", tt.code, w.Code)
 			}
