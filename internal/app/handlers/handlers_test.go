@@ -3,6 +3,8 @@ package handlers
 import (
 	"github.com/malyg1n/shortener/internal/app/services"
 	"github.com/malyg1n/shortener/internal/app/storage"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -45,14 +47,12 @@ func Test_GetLink(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, "/"+tt.id, nil)
-			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handler.GetLink)
-			h.ServeHTTP(w, request)
-			res := w.Result()
-			res.Body.Close()
+			r := handler.NewRouter()
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+			res, _ := testRequest(t, handler.GetLink, http.MethodGet, "/"+tt.id, nil)
 			if res.StatusCode != tt.code {
-				t.Errorf("Expected status code %d, got %d", tt.code, w.Code)
+				t.Errorf("Expected status code %d, got %d", tt.code, res.StatusCode)
 			}
 			if res.Header.Get("Location") != tt.link {
 				t.Errorf("Expected header location %s, got %s", tt.link, res.Header.Get("Location"))
@@ -86,15 +86,31 @@ func Test_SetLink(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			payload := strings.NewReader(tt.link)
-			request := httptest.NewRequest(http.MethodPost, "/", payload)
-			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handler.SetLink)
-			h.ServeHTTP(w, request)
-			res := w.Result()
-			res.Body.Close()
+			r := handler.NewRouter()
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+			res, _ := testRequest(t, handler.SetLink, http.MethodPost, "/", payload)
 			if res.StatusCode != tt.code {
-				t.Errorf("Expected status code %d, got %d", tt.code, w.Code)
+				t.Errorf("Expected status code %d, got %d", tt.code, res.StatusCode)
 			}
 		})
 	}
+}
+
+func testRequest(t *testing.T, handler http.HandlerFunc, method, path string, payload io.Reader) (*http.Response, string) {
+	req := httptest.NewRequest(method, path, payload)
+
+	w := httptest.NewRecorder()
+	h := http.HandlerFunc(handler)
+	h.ServeHTTP(w, req)
+	res := w.Result()
+	respBody, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	defer res.Body.Close()
+
+	return res, string(respBody)
 }
