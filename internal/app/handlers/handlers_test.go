@@ -105,12 +105,11 @@ func testRequest(t *testing.T, handler http.HandlerFunc, method, path string, pa
 	h.ServeHTTP(w, req)
 	res := w.Result()
 	respBody, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
 
 	if err != nil {
 		t.Error(err.Error())
 	}
-
-	defer res.Body.Close()
 
 	return res, string(respBody)
 }
