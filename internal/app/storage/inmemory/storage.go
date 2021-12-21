@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/malyg1n/shortener/internal/app/errs"
 	"github.com/malyg1n/shortener/internal/app/storage"
-	"net/http"
 	"sync"
 )
 
@@ -32,8 +31,5 @@ func (s *LinksStorageMap) GetLink(ctx context.Context, id string) (string, error
 		return link.(string), nil
 	}
 
-	return "", &errs.NotFoundError{
-		StatusCode: http.StatusNotFound,
-		Message:    "link not found",
-	}
+	return "", errs.ErrNotFound
 }

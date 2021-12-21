@@ -27,11 +27,11 @@ type HandlerSuite struct {
 
 func (s *HandlerSuite) SetupTest() {
 	s.storage = stub.NewLinksStorageStub() // Mock
-	s.service = v1.NewDefaultLinker(s.storage)
-	s.handler = NewLinksHandler(s.service)
+	s.service, _ = v1.NewDefaultLinker(s.storage)
+	s.handler, _ = NewLinksHandler(s.service)
 }
 
-func TestHandlerSuite(t *testing.T) {
+func TestLinksHandlers(t *testing.T) {
 	suite.Run(t, new(HandlerSuite))
 }
 

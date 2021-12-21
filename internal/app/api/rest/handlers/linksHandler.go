@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/malyg1n/shortener/internal/app/errs"
 	"github.com/malyg1n/shortener/internal/app/services/linker"
 	"io"
 	"net/http"
@@ -15,13 +15,13 @@ type LinksHandler struct {
 }
 
 // NewLinksHandler creates new LinksHandler instance
-func NewLinksHandler(service linker.Linker) *LinksHandler {
+func NewLinksHandler(service linker.Linker) (*LinksHandler, error) {
 	if service == nil {
-		panic("service is not defined")
+		return nil, errs.ErrLinkerInternal
 	}
 	return &LinksHandler{
 		service: service,
-	}
+	}, nil
 }
 
 // SetLink get and store url
@@ -45,7 +45,6 @@ func (lh *LinksHandler) SetLink(w http.ResponseWriter, r *http.Request) {
 // GetLink redirects ro url
 func (lh *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "linkId")
-	fmt.Println(id)
 	ctx := r.Context()
 	link, err := lh.service.GetLink(ctx, id)
 	if err != nil {
