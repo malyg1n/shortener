@@ -3,9 +3,9 @@ package rest
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
-	"github.com/malyg1n/shortener/internal/app/api/rest/handlers"
-	v1 "github.com/malyg1n/shortener/internal/app/services/linker/v1"
-	"github.com/malyg1n/shortener/internal/app/storage/inmemory"
+	"github.com/malyg1n/shortener/api/rest/handlers"
+	"github.com/malyg1n/shortener/services/linker/v1"
+	"github.com/malyg1n/shortener/storage/inmemory"
 	"net/http"
 	"time"
 )
