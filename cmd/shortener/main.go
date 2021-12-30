@@ -6,14 +6,13 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"time"
 )
 
 func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
 		<-c

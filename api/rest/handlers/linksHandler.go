@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/pkg/errs"
 	"github.com/malyg1n/shortener/services/linker"
@@ -54,4 +56,42 @@ func (lh *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Location", link)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+// APISetLink get and store url
+func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	s := struct {
+		URL string `json:"url"`
+	}{}
+	if err = json.Unmarshal(b, &s); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ctx := r.Context()
+
+	link, err := lh.service.SetLink(ctx, s.URL)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	res := struct {
+		Result string `json:"result"`
+	}{Result: fmt.Sprintf("http://%s/%s", r.Host, link)}
+
+	result, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(result)
 }

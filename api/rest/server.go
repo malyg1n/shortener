@@ -25,6 +25,7 @@ func RunServer(ctx context.Context) error {
 	router := chi.NewRouter()
 	router.Get("/{linkId}", handler.GetLink)
 	router.Post("/", handler.SetLink)
+	router.Post("/api/shorten", handler.APISetLink)
 
 	srv := &http.Server{
 		Addr:    ":8080",
@@ -41,5 +42,6 @@ func RunServer(ctx context.Context) error {
 	defer func() {
 		cancel()
 	}()
+
 	return srv.Shutdown(ctxShutDown)
 }
