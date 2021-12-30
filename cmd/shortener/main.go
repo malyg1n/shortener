@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/malyg1n/shortener/internal/app/api/rest"
+	"github.com/malyg1n/shortener/api/rest"
 	"log"
 	"os"
 	"os/signal"

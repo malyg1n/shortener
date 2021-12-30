@@ -2,8 +2,8 @@ package stub
 
 import (
 	"context"
-	"github.com/malyg1n/shortener/internal/app/errs"
-	"github.com/malyg1n/shortener/internal/app/storage"
+	"github.com/malyg1n/shortener/pkg/errs"
+	"github.com/malyg1n/shortener/storage"
 	"sync"
 )
 

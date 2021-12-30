@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
-	"github.com/malyg1n/shortener/internal/app/errs"
-	"github.com/malyg1n/shortener/internal/app/services/linker"
+	"github.com/malyg1n/shortener/pkg/errs"
+	"github.com/malyg1n/shortener/services/linker"
 	"io"
 	"net/http"
 )

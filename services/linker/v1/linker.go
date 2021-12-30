@@ -3,9 +3,9 @@ package v1
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/malyg1n/shortener/internal/app/errs"
-	"github.com/malyg1n/shortener/internal/app/services/linker"
-	"github.com/malyg1n/shortener/internal/app/storage"
+	"github.com/malyg1n/shortener/pkg/errs"
+	"github.com/malyg1n/shortener/services/linker"
+	"github.com/malyg1n/shortener/storage"
 	"net/url"
 	"regexp"
 )
