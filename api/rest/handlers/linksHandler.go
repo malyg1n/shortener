@@ -9,6 +9,8 @@ import (
 	"github.com/malyg1n/shortener/services/linker"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 )
 
 // LinksHandler is a base handler
@@ -41,7 +43,7 @@ func (lh *LinksHandler) SetLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("http://" + r.Host + "/" + linkID))
+	w.Write([]byte(getFullURL(linkID)))
 }
 
 // GetLink redirects ro url
@@ -75,7 +77,7 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 
-	link, err := lh.service.SetLink(ctx, s.URL)
+	linkID, err := lh.service.SetLink(ctx, s.URL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -83,7 +85,7 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 
 	res := struct {
 		Result string `json:"result"`
-	}{Result: fmt.Sprintf("http://%s/%s", r.Host, link)}
+	}{Result: getFullURL(linkID)}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -94,4 +96,13 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
+}
+
+func getFullURL(linkID string) string {
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+	baseURL = strings.TrimRight(baseURL, "/")
+	return fmt.Sprintf("%s/%s", baseURL, linkID)
 }

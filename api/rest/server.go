@@ -7,6 +7,7 @@ import (
 	"github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage/inmemory"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -27,8 +28,12 @@ func RunServer(ctx context.Context) error {
 	router.Post("/", handler.SetLink)
 	router.Post("/api/shorten", handler.APISetLink)
 
+	addr := os.Getenv("SERVER_ADDRESS")
+	if addr == "" {
+		addr = ":8080"
+	}
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    addr,
 		Handler: router,
 	}
 
