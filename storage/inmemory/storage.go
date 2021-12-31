@@ -33,3 +33,8 @@ func (s *LinksStorageMap) GetLink(ctx context.Context, id string) (string, error
 
 	return "", errs.ErrNotFound
 }
+
+// Close storage
+func (s *LinksStorageMap) Close() error {
+	return nil
+}
