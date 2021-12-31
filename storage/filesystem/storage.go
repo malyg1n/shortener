@@ -3,6 +3,7 @@ package filesystem
 import (
 	"context"
 	"encoding/json"
+	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/pkg/errs"
 	"github.com/malyg1n/shortener/storage"
 	"os"
@@ -25,13 +26,9 @@ type link struct {
 
 // NewLinksStorageFile creates new LinksStorageMap instance
 func NewLinksStorageFile() (*LinksStorageFile, error) {
-	filename := os.Getenv("FILE_STORAGE_PATH")
-	if filename == "" {
-		filename = "links.json"
-	}
-
+	cfg := config.GetConfig()
 	s := &LinksStorageFile{
-		filename: filename,
+		filename: cfg.FileStoragePath,
 		links:    make(map[string]string),
 	}
 	err := s.loadLinks()

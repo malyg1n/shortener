@@ -2,17 +2,20 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
+	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage/filesystem"
 	"net/http"
-	"os"
 	"time"
 )
 
 // RunServer init routes adn listen
 func RunServer(ctx context.Context) error {
+	cfg := config.GetConfig()
+	fmt.Println(cfg)
 	storage, err := filesystem.NewLinksStorageFile()
 	if err != nil {
 		return err
@@ -33,12 +36,8 @@ func RunServer(ctx context.Context) error {
 	router.Post("/", handler.SetLink)
 	router.Post("/api/shorten", handler.APISetLink)
 
-	addr := os.Getenv("SERVER_ADDRESS")
-	if addr == "" {
-		addr = ":8080"
-	}
 	srv := &http.Server{
-		Addr:    addr,
+		Addr:    cfg.Addr,
 		Handler: router,
 	}
 

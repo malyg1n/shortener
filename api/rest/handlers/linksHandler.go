@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/pkg/errs"
 	"github.com/malyg1n/shortener/services/linker"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -99,10 +99,7 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func getFullURL(linkID string) string {
-	baseURL := os.Getenv("BASE_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:8080"
-	}
-	baseURL = strings.TrimRight(baseURL, "/")
+	cfg := config.GetConfig()
+	baseURL := strings.TrimRight(cfg.BaseURL, "/")
 	return fmt.Sprintf("%s/%s", baseURL, linkID)
 }
