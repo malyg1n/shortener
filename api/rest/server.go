@@ -2,7 +2,6 @@ package rest
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
 	"github.com/malyg1n/shortener/pkg/config"
@@ -15,7 +14,6 @@ import (
 // RunServer init routes adn listen
 func RunServer(ctx context.Context) error {
 	cfg := config.GetConfig()
-	fmt.Println(cfg)
 	storage, err := filesystem.NewLinksStorageFile()
 	if err != nil {
 		return err

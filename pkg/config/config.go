@@ -45,6 +45,7 @@ func getAddr() string {
 	if os.Getenv("SERVER_ADDRESS") != "" {
 		return os.Getenv("SERVER_ADDRESS")
 	}
+
 	return "localhost:8080"
 }
 
@@ -55,6 +56,7 @@ func getBaseURL() string {
 	if os.Getenv("BASE_URL") != "" {
 		return os.Getenv("BASE_URL")
 	}
+
 	return "http://localhost:8080"
 }
 
@@ -65,5 +67,6 @@ func getFileStoragePath() string {
 	if os.Getenv("FILE_STORAGE_PATH") != "" {
 		return os.Getenv("FILE_STORAGE_PATH")
 	}
+
 	return "links.json"
 }
