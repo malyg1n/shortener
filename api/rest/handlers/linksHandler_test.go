@@ -114,10 +114,73 @@ func (s *HandlerSuite) TestSetLink() {
 	}
 }
 
+func (s *HandlerSuite) TestApiSetLink() {
+	tests := []struct {
+		name         string
+		codeExpected int
+		jsonBody     string
+		error        string
+	}{
+		{
+			"valid link",
+			201,
+			`{"url": "https://google.com"}`,
+			"",
+		},
+		{
+			"invalid link",
+			400,
+			`{"url": "invalid link"}`,
+			"invalid input",
+		},
+		{
+			"empty link",
+			400,
+			`{"url": ""}`,
+			"invalid input",
+		},
+		{
+			"invalid json",
+			400,
+			`{"url": "https://google.com""}`,
+			`invalid character '"' after object key:value pair`,
+		},
+		{
+			"empty body",
+			400,
+			``,
+			"unexpected end of JSON input",
+		},
+		{
+			"invalid param name",
+			400,
+			`{"uri": "https://google.com"}`,
+			"invalid input",
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			payload := strings.NewReader(tt.jsonBody)
+
+			ts := httptest.NewServer(s.getRouter())
+			defer ts.Close()
+
+			res, body := testRequest(t, ts, s.handler.SetLink, http.MethodPost, "/api/shorten", payload)
+			defer res.Body.Close()
+
+			assert.Equal(t, tt.codeExpected, res.StatusCode)
+			if tt.error != "" {
+				assert.Equal(t, tt.error, body)
+			}
+		})
+	}
+}
+
 func (s *HandlerSuite) getRouter() chi.Router {
 	router := chi.NewRouter()
 	router.Get("/{linkId}", s.handler.GetLink)
 	router.Post("/", s.handler.SetLink)
+	router.Post("/api/shorten", s.handler.APISetLink)
 
 	return router
 }
@@ -139,5 +202,5 @@ func testRequest(t *testing.T, ts *httptest.Server, handler http.HandlerFunc, me
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	return resp, string(respBody)
+	return resp, strings.TrimSpace(string(respBody))
 }

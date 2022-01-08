@@ -4,15 +4,22 @@ import (
 	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
+	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/services/linker/v1"
-	"github.com/malyg1n/shortener/storage/inmemory"
+	"github.com/malyg1n/shortener/storage/filesystem"
 	"net/http"
 	"time"
 )
 
 // RunServer init routes adn listen
 func RunServer(ctx context.Context) error {
-	linker, err := v1.NewDefaultLinker(inmemory.NewLinksStorageMap())
+	cfg := config.GetConfig()
+	storage, err := filesystem.NewLinksStorageFile()
+	if err != nil {
+		return err
+	}
+
+	linker, err := v1.NewDefaultLinker(storage)
 	if err != nil {
 		return err
 	}
@@ -25,9 +32,10 @@ func RunServer(ctx context.Context) error {
 	router := chi.NewRouter()
 	router.Get("/{linkId}", handler.GetLink)
 	router.Post("/", handler.SetLink)
+	router.Post("/api/shorten", handler.APISetLink)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    cfg.Addr,
 		Handler: router,
 	}
 
@@ -41,5 +49,8 @@ func RunServer(ctx context.Context) error {
 	defer func() {
 		cancel()
 	}()
+
+	storage.Close()
+
 	return srv.Shutdown(ctxShutDown)
 }
