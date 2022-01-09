@@ -7,11 +7,11 @@ import (
 
 const (
 	defaultServerAddress   = "localhost:8080"
-	defaultBaseUrl         = "http://localhost:8080"
+	defaultBaseURL         = "http://localhost:8080"
 	defaultFileStoragePath = "link.json"
 
 	serverAddressVarName   = "served_address"
-	baseUrlVarName         = "base_url"
+	baseURLVarName         = "base_url"
 	fileStoragePathVarName = "file_storage_path"
 )
 
@@ -34,9 +34,9 @@ func GetConfig() *Config {
 	processVars()
 
 	instance = &Config{
-		Addr:            viper.GetString("server_address"),
-		BaseURL:         viper.GetString("base_url"),
-		FileStoragePath: viper.GetString("file_storage_path"),
+		Addr:            viper.GetString(serverAddressVarName),
+		BaseURL:         viper.GetString(baseURLVarName),
+		FileStoragePath: viper.GetString(fileStoragePathVarName),
 	}
 
 	return instance
@@ -44,20 +44,20 @@ func GetConfig() *Config {
 
 func processVars() {
 	pflag.String("a", "localhost:8080", "Server address and port")
-	pflag.String("b", "http://localhost:8080", "Server url")
+	pflag.String("b", "http://localhost:8080", "Server URL")
 	pflag.String("f", "links.json", "Path to file for links")
 	pflag.Parse()
 
 	_ = viper.BindPFlag(serverAddressVarName, pflag.CommandLine.Lookup("a"))
-	_ = viper.BindPFlag(baseUrlVarName, pflag.CommandLine.Lookup("b"))
+	_ = viper.BindPFlag(baseURLVarName, pflag.CommandLine.Lookup("b"))
 	_ = viper.BindPFlag(fileStoragePathVarName, pflag.CommandLine.Lookup("f"))
 
 	_ = viper.BindEnv(serverAddressVarName)
-	_ = viper.BindEnv(baseUrlVarName)
+	_ = viper.BindEnv(baseURLVarName)
 	_ = viper.BindEnv(fileStoragePathVarName)
 
 	viper.SetDefault(serverAddressVarName, defaultServerAddress)
-	viper.SetDefault(baseUrlVarName, defaultBaseUrl)
+	viper.SetDefault(baseURLVarName, defaultBaseURL)
 	viper.SetDefault(fileStoragePathVarName, defaultFileStoragePath)
 
 	viper.AutomaticEnv()
