@@ -6,7 +6,7 @@ import (
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage"
-	"github.com/malyg1n/shortener/storage/stub"
+	"github.com/malyg1n/shortener/storage/inmemory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -26,7 +26,7 @@ type HandlerSuite struct {
 }
 
 func (s *HandlerSuite) SetupTest() {
-	s.storage = stub.NewLinksStorageStub() // Mock
+	s.storage = inmemory.NewLinksStorageMap()
 	s.service, _ = v1.NewDefaultLinker(s.storage)
 	s.handler, _ = NewLinksHandler(s.service)
 }
