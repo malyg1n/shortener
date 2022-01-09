@@ -43,6 +43,15 @@ func GetConfig() *Config {
 }
 
 func processVars() {
+	viper.SetDefault(serverAddressVarName, defaultServerAddress)
+	viper.SetDefault(baseURLVarName, defaultBaseURL)
+	viper.SetDefault(fileStoragePathVarName, defaultFileStoragePath)
+
+	_ = viper.BindEnv(serverAddressVarName)
+	_ = viper.BindEnv(baseURLVarName)
+	_ = viper.BindEnv(fileStoragePathVarName)
+	viper.AutomaticEnv()
+
 	pflag.String("a", "localhost:8080", "Server address and port")
 	pflag.String("b", "http://localhost:8080", "Server URL")
 	pflag.String("f", "links.json", "Path to file for links")
@@ -51,14 +60,4 @@ func processVars() {
 	_ = viper.BindPFlag(serverAddressVarName, pflag.CommandLine.Lookup("a"))
 	_ = viper.BindPFlag(baseURLVarName, pflag.CommandLine.Lookup("b"))
 	_ = viper.BindPFlag(fileStoragePathVarName, pflag.CommandLine.Lookup("f"))
-
-	_ = viper.BindEnv(serverAddressVarName)
-	_ = viper.BindEnv(baseURLVarName)
-	_ = viper.BindEnv(fileStoragePathVarName)
-
-	viper.SetDefault(serverAddressVarName, defaultServerAddress)
-	viper.SetDefault(baseURLVarName, defaultBaseURL)
-	viper.SetDefault(fileStoragePathVarName, defaultFileStoragePath)
-
-	viper.AutomaticEnv()
 }
