@@ -149,7 +149,7 @@ func (s *HandlerSuite) TestApiSetLink() {
 			"empty body",
 			400,
 			``,
-			"unexpected end of JSON input",
+			"EOF",
 		},
 		{
 			"invalid param name",

@@ -31,9 +31,9 @@ func NewLinksStorageFile() (*LinksStorageFile, error) {
 		filename: cfg.FileStoragePath,
 		links:    make(map[string]string),
 	}
-	err := s.loadLinks()
+	_ = s.loadLinks()
 
-	return s, err
+	return s, nil
 }
 
 // SetLink store link into collection
@@ -48,11 +48,12 @@ func (s *LinksStorageFile) GetLink(ctx context.Context, id string) (string, erro
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 
-	if link, ok := s.links[id]; ok {
-		return link, nil
+	link, ok := s.links[id]
+	if !ok {
+		return "", errs.ErrNotFound
 	}
 
-	return "", errs.ErrNotFound
+	return link, nil
 }
 
 // Close file handler
@@ -66,15 +67,14 @@ func (s *LinksStorageFile) loadLinks() error {
 		return err
 	}
 
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	dec := json.NewDecoder(file)
-	var links []link
 
-	dec.Decode(&links)
-
-	for _, link := range links {
-		s.links[link.ID] = link.URL
+	if err := dec.Decode(&s.links); err != nil {
+		return nil
 	}
 
 	return nil
@@ -86,13 +86,11 @@ func (s *LinksStorageFile) uploadLinks() error {
 		return err
 	}
 
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	enc := json.NewEncoder(file)
-	var links []link
-	for linkID, linkURL := range s.links {
-		links = append(links, link{ID: linkID, URL: linkURL})
-	}
 
-	return enc.Encode(links)
+	return enc.Encode(s.links)
 }

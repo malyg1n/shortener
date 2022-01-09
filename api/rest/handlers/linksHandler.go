@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/malyg1n/shortener/api/rest/models"
 	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/pkg/errs"
 	"github.com/malyg1n/shortener/services/linker"
@@ -62,32 +63,25 @@ func (lh *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 
 // APISetLink get and store url
 func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
+	dec := json.NewDecoder(r.Body)
+	s := models.SetLinkRequest{}
+
+	if err := dec.Decode(&s); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	s := struct {
-		URL string `json:"url"`
-	}{}
-	if err = json.Unmarshal(b, &s); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	ctx := r.Context()
-
 	linkID, err := lh.service.SetLink(ctx, s.URL)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	res := struct {
-		Result string `json:"result"`
-	}{Result: getFullURL(linkID)}
-
+	res := models.SetLinkResponse{Result: getFullURL(linkID)}
 	result, err := json.Marshal(res)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
