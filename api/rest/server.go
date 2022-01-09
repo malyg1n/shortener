@@ -40,7 +40,7 @@ func RunServer(ctx context.Context) error {
 	}
 
 	go func() {
-		srv.ListenAndServe()
+		_ = srv.ListenAndServe()
 	}()
 
 	<-ctx.Done()
