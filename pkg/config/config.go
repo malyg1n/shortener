@@ -5,6 +5,16 @@ import (
 	"os"
 )
 
+const (
+	envServerAddr      = "SERVER_ADDRESS"
+	envBaseURL         = "BASE_URL"
+	envFileStoragePath = "FILE_STORAGE_PATH"
+
+	defaultServerAddr      = "localhost:8080"
+	defaultBaseURL         = "http://localhost:8080"
+	defaultFileStoragePath = "links.json"
+)
+
 var (
 	addr            *string
 	baseURL         *string
@@ -42,31 +52,31 @@ func getAddr() string {
 	if *addr != "" {
 		return *addr
 	}
-	if os.Getenv("SERVER_ADDRESS") != "" {
-		return os.Getenv("SERVER_ADDRESS")
+	if os.Getenv(envServerAddr) != "" {
+		return os.Getenv(envServerAddr)
 	}
 
-	return "localhost:8080"
+	return defaultServerAddr
 }
 
 func getBaseURL() string {
 	if *baseURL != "" {
 		return *baseURL
 	}
-	if os.Getenv("BASE_URL") != "" {
-		return os.Getenv("BASE_URL")
+	if os.Getenv(envBaseURL) != "" {
+		return os.Getenv(envBaseURL)
 	}
 
-	return "http://localhost:8080"
+	return defaultBaseURL
 }
 
 func getFileStoragePath() string {
 	if *fileStoragePath != "" {
 		return *fileStoragePath
 	}
-	if os.Getenv("FILE_STORAGE_PATH") != "" {
-		return os.Getenv("FILE_STORAGE_PATH")
+	if os.Getenv(envFileStoragePath) != "" {
+		return os.Getenv(envFileStoragePath)
 	}
 
-	return "links.json"
+	return defaultFileStoragePath
 }
