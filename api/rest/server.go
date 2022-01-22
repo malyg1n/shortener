@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
+	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage/filesystem"
@@ -36,7 +37,7 @@ func RunServer(ctx context.Context) error {
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
-		Handler: router,
+		Handler: middleware.Compress(middleware.Decompress(router)),
 	}
 
 	go func() {
