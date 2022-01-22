@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
+	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage"
@@ -68,7 +69,7 @@ func (s *HandlerSuite) TestGetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, _ := testRequest(t, ts, http.MethodGet, "/"+tt.id, nil)
+			res, _ := testRequest(t, ts, http.MethodGet, "/"+tt.id, nil, map[string]string{})
 			defer func() {
 				_ = res.Body.Close()
 			}()
@@ -108,7 +109,7 @@ func (s *HandlerSuite) TestSetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, _ := testRequest(t, ts, http.MethodPost, "/", payload)
+			res, _ := testRequest(t, ts, http.MethodPost, "/", payload, map[string]string{})
 			defer func() {
 				_ = res.Body.Close()
 			}()
@@ -169,7 +170,7 @@ func (s *HandlerSuite) TestApiSetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, body := testRequest(t, ts, http.MethodPost, "/api/shorten", payload)
+			res, body := testRequest(t, ts, http.MethodPost, "/api/shorten", payload, map[string]string{})
 			defer func() {
 				_ = res.Body.Close()
 			}()
@@ -182,8 +183,50 @@ func (s *HandlerSuite) TestApiSetLink() {
 	}
 }
 
+func (s *HandlerSuite) TestCompressAndDecompressMiddlewares() {
+	tests := []struct {
+		name           string
+		codeExpected   int
+		body           io.Reader
+		headers        map[string]string
+		waitingHeaders map[string]string
+		error          string
+	}{
+		{
+			"#1",
+			201,
+			strings.NewReader(`{"url": "https://google.com"}`),
+			map[string]string{"Accept-Encoding": "gzip"},
+			map[string]string{"Content-Encoding": "gzip"},
+			"",
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(s.getRouter())
+			defer ts.Close()
+
+			res, body := testRequest(t, ts, http.MethodPost, "/api/shorten", tt.body, tt.headers)
+			defer func() {
+				_ = res.Body.Close()
+			}()
+
+			assert.Equal(t, tt.codeExpected, res.StatusCode)
+			if tt.error != "" {
+				assert.Equal(t, tt.error, body)
+			} else {
+				for k, v := range tt.waitingHeaders {
+					assert.Equal(t, v, res.Header.Get(k))
+				}
+			}
+		})
+	}
+}
+
 func (s *HandlerSuite) getRouter() chi.Router {
 	router := chi.NewRouter()
+	router.Use(middleware.Compress)
+	router.Use(middleware.Decompress)
 	router.Get("/{linkId}", s.handler.GetLink)
 	router.Post("/", s.handler.SetLink)
 	router.Post("/api/shorten", s.handler.APISetLink)
@@ -191,8 +234,12 @@ func (s *HandlerSuite) getRouter() chi.Router {
 	return router
 }
 
-func testRequest(t *testing.T, ts *httptest.Server, method, path string, payload io.Reader) (*http.Response, string) {
+func testRequest(t *testing.T, ts *httptest.Server, method, path string, payload io.Reader, headers map[string]string) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, payload)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
 	require.NoError(t, err)
 
 	client := &http.Client{
@@ -200,7 +247,6 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string, payload
 			return http.ErrUseLastResponse
 		},
 	}
-
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 
