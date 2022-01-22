@@ -50,7 +50,7 @@ func RunServer(ctx context.Context) error {
 		cancel()
 	}()
 
-	storage.Close()
+	_ = storage.Close()
 
 	return srv.Shutdown(ctxShutDown)
 }

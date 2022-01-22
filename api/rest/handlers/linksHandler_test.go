@@ -68,8 +68,10 @@ func (s *HandlerSuite) TestGetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, _ := testRequest(t, ts, s.handler.GetLink, http.MethodGet, "/"+tt.id, nil)
-			defer res.Body.Close()
+			res, _ := testRequest(t, ts, http.MethodGet, "/"+tt.id, nil)
+			defer func() {
+				_ = res.Body.Close()
+			}()
 
 			assert.Equal(t, tt.codeExpected, res.StatusCode)
 			assert.Equal(t, tt.linkExpected, res.Header.Get("Location"))
@@ -106,8 +108,10 @@ func (s *HandlerSuite) TestSetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, _ := testRequest(t, ts, s.handler.SetLink, http.MethodPost, "/", payload)
-			defer res.Body.Close()
+			res, _ := testRequest(t, ts, http.MethodPost, "/", payload)
+			defer func() {
+				_ = res.Body.Close()
+			}()
 
 			assert.Equal(t, tt.codeExpected, res.StatusCode)
 		})
@@ -165,8 +169,10 @@ func (s *HandlerSuite) TestApiSetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, body := testRequest(t, ts, s.handler.SetLink, http.MethodPost, "/api/shorten", payload)
-			defer res.Body.Close()
+			res, body := testRequest(t, ts, http.MethodPost, "/api/shorten", payload)
+			defer func() {
+				_ = res.Body.Close()
+			}()
 
 			assert.Equal(t, tt.codeExpected, res.StatusCode)
 			if tt.error != "" {
@@ -185,7 +191,7 @@ func (s *HandlerSuite) getRouter() chi.Router {
 	return router
 }
 
-func testRequest(t *testing.T, ts *httptest.Server, handler http.HandlerFunc, method, path string, payload io.Reader) (*http.Response, string) {
+func testRequest(t *testing.T, ts *httptest.Server, method, path string, payload io.Reader) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, payload)
 	require.NoError(t, err)
 
@@ -200,7 +206,9 @@ func testRequest(t *testing.T, ts *httptest.Server, handler http.HandlerFunc, me
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	return resp, strings.TrimSpace(string(respBody))
 }
