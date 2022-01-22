@@ -31,13 +31,15 @@ func RunServer(ctx context.Context) error {
 	}
 
 	router := chi.NewRouter()
+	router.Use(middleware.Compress)
+	router.Use(middleware.Decompress)
 	router.Get("/{linkId}", handler.GetLink)
 	router.Post("/", handler.SetLink)
 	router.Post("/api/shorten", handler.APISetLink)
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
-		Handler: middleware.Compress(middleware.Decompress(router)),
+		Handler: router,
 	}
 
 	go func() {
