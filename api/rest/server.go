@@ -34,10 +34,11 @@ func RunServer(ctx context.Context) error {
 	router.Get("/{linkId}", handler.GetLink)
 	router.Post("/", handler.SetLink)
 	router.Post("/api/shorten", handler.APISetLink)
+	router.Get("/user/urls", handler.GetLinksByUser)
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
-		Handler: middleware.Compress(middleware.Decompress(router)),
+		Handler: middleware.Compress(middleware.Decompress(middleware.Cookies(router))),
 	}
 
 	go func() {

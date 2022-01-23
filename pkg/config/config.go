@@ -9,10 +9,12 @@ const (
 	envServerAddr      = "SERVER_ADDRESS"
 	envBaseURL         = "BASE_URL"
 	envFileStoragePath = "FILE_STORAGE_PATH"
+	envSecretKey       = "APP_KEY"
 
 	defaultServerAddr      = "localhost:8080"
 	defaultBaseURL         = "http://localhost:8080"
 	defaultFileStoragePath = "links.json"
+	defaultSecretKey       = "secret-key"
 )
 
 var (
@@ -26,6 +28,7 @@ type Config struct {
 	Addr            string
 	BaseURL         string
 	FileStoragePath string
+	SecretKey       string
 }
 
 func init() {
@@ -45,6 +48,7 @@ func GetConfig() *Config {
 		Addr:            getAddr(),
 		BaseURL:         getBaseURL(),
 		FileStoragePath: getFileStoragePath(),
+		SecretKey:       getEnv(envSecretKey, defaultSecretKey),
 	}
 
 	return instance
@@ -81,4 +85,12 @@ func getFileStoragePath() string {
 	}
 
 	return defaultFileStoragePath
+}
+
+func getEnv(envName, defaultValue string) string {
+	if os.Getenv(envName) != "" {
+		return os.Getenv(envName)
+	}
+
+	return defaultValue
 }

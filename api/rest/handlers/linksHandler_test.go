@@ -37,8 +37,8 @@ func TestLinksHandlers(t *testing.T) {
 }
 
 func (s *HandlerSuite) TestGetLink() {
-	ctx := context.Background()
-	shortLinkID, _ := s.service.SetLink(ctx, "https://google.com")
+	ctx := context.WithValue(context.Background(), "user_uuid", "1")
+	shortLinkID, _ := s.service.SetLink(ctx, "https://google.com", "1")
 	tests := []struct {
 		name         string
 		codeExpected int
@@ -227,6 +227,7 @@ func (s *HandlerSuite) getRouter() chi.Router {
 	router := chi.NewRouter()
 	router.Use(middleware.Compress)
 	router.Use(middleware.Decompress)
+	router.Use(middleware.Cookies)
 	router.Get("/{linkId}", s.handler.GetLink)
 	router.Post("/", s.handler.SetLink)
 	router.Post("/api/shorten", s.handler.APISetLink)

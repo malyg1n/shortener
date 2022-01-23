@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -36,8 +35,11 @@ func (lh *LinksHandler) SetLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	ctx := context.Background()
-	linkID, err := lh.service.SetLink(ctx, string(b))
+
+	ctx := r.Context()
+	userUUID := ctx.Value("user_uuid").(string)
+	linkID, err := lh.service.SetLink(ctx, string(b), userUUID)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -65,14 +67,14 @@ func (lh *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	s := models.SetLinkRequest{}
-
 	if err := dec.Decode(&s); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	ctx := r.Context()
-	linkID, err := lh.service.SetLink(ctx, s.URL)
+	userUUID := ctx.Value("user_uuid").(string)
+	linkID, err := lh.service.SetLink(ctx, s.URL, userUUID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -89,6 +91,26 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	w.Write(result)
+}
+
+func (lh *LinksHandler) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userUUID := ctx.Value("user_uuid").(string)
+
+	links, err := lh.service.GetLinksByUser(ctx, userUUID)
+	if err != nil {
+		http.Error(w, "No content", http.StatusNoContent)
+		return
+	}
+
+	result, err := json.Marshal(links)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(result)
 }
 
