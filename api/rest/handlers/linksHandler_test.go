@@ -37,9 +37,8 @@ func TestLinksHandlers(t *testing.T) {
 }
 
 func (s *HandlerSuite) TestGetLink() {
-	linkUuidName := "user_uuid"
-	ctx := context.WithValue(context.Background(), linkUuidName, "1")
-	shortLinkID, _ := s.service.SetLink(ctx, "https://google.com", "1")
+	ctx := context.Background()
+	shortLinkID, _ := s.service.SetLink(ctx, "https://google.com", "fake_uuid")
 	tests := []struct {
 		name         string
 		codeExpected int
