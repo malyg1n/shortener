@@ -105,11 +105,10 @@ func (lh *LinksHandler) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseLinks := make([]models.LinkResponse, len(links))
-	for _, link := range links {
-		fmt.Println(link)
-		responseLinks = append(responseLinks, models.LinkResponse{
+	for k, link := range links {
+		responseLinks[k] = models.LinkResponse{
 			ShortURL: getFullURL(link.ShortURL), OriginalURL: link.OriginalURL,
-		})
+		}
 	}
 
 	result, err := json.Marshal(responseLinks)
