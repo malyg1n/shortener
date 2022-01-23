@@ -104,7 +104,15 @@ func (lh *LinksHandler) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := json.Marshal(links)
+	responseLinks := make([]models.LinkResponse, len(links))
+	for _, link := range links {
+		fmt.Println(link)
+		responseLinks = append(responseLinks, models.LinkResponse{
+			ShortURL: getFullURL(link.ShortURL), OriginalURL: link.OriginalURL,
+		})
+	}
+
+	result, err := json.Marshal(responseLinks)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
