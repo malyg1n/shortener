@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/api/rest/models"
 	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/pkg/errs"
@@ -37,7 +38,7 @@ func (lh *LinksHandler) SetLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	userUUID := ctx.Value("user_uuid").(string)
+	userUUID := ctx.Value(middleware.ContextUserKey).(string)
 	linkID, err := lh.service.SetLink(ctx, string(b), userUUID)
 
 	if err != nil {
@@ -73,7 +74,7 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	userUUID := ctx.Value("user_uuid").(string)
+	userUUID := ctx.Value(middleware.ContextUserKey).(string)
 	linkID, err := lh.service.SetLink(ctx, s.URL, userUUID)
 
 	if err != nil {
@@ -96,7 +97,7 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 
 func (lh *LinksHandler) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	userUUID := ctx.Value("user_uuid").(string)
+	userUUID := ctx.Value(middleware.ContextUserKey).(string)
 
 	links, err := lh.service.GetLinksByUser(ctx, userUUID)
 	if err != nil {
