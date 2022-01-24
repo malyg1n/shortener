@@ -7,30 +7,13 @@ import (
 	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/api/rest/models"
 	"github.com/malyg1n/shortener/pkg/config"
-	"github.com/malyg1n/shortener/pkg/errs"
-	"github.com/malyg1n/shortener/services/linker"
 	"io"
 	"net/http"
 	"strings"
 )
 
-// LinksHandler is a base handler
-type LinksHandler struct {
-	service linker.Linker
-}
-
-// NewLinksHandler creates new LinksHandler instance
-func NewLinksHandler(service linker.Linker) (*LinksHandler, error) {
-	if service == nil {
-		return nil, errs.ErrLinkerInternal
-	}
-	return &LinksHandler{
-		service: service,
-	}, nil
-}
-
 // SetLink get and store url
-func (lh *LinksHandler) SetLink(w http.ResponseWriter, r *http.Request) {
+func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -39,7 +22,7 @@ func (lh *LinksHandler) SetLink(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	userUUID := ctx.Value(middleware.ContextUserKey).(string)
-	linkID, err := lh.service.SetLink(ctx, string(b), userUUID)
+	linkID, err := hm.service.SetLink(ctx, string(b), userUUID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -51,10 +34,10 @@ func (lh *LinksHandler) SetLink(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetLink redirects ro url
-func (lh *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
+func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "linkId")
 	ctx := r.Context()
-	link, err := lh.service.GetLink(ctx, id)
+	link, err := hm.service.GetLink(ctx, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -65,7 +48,7 @@ func (lh *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 }
 
 // APISetLink get and store url
-func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
+func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	s := models.SetLinkRequest{}
 	if err := dec.Decode(&s); err != nil {
@@ -75,7 +58,7 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	userUUID := ctx.Value(middleware.ContextUserKey).(string)
-	linkID, err := lh.service.SetLink(ctx, s.URL, userUUID)
+	linkID, err := hm.service.SetLink(ctx, s.URL, userUUID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -95,11 +78,12 @@ func (lh *LinksHandler) APISetLink(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func (lh *LinksHandler) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
+func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userUUID := ctx.Value(middleware.ContextUserKey).(string)
+	fmt.Println(userUUID)
 
-	links, err := lh.service.GetLinksByUser(ctx, userUUID)
+	links, err := hm.service.GetLinksByUser(ctx, userUUID)
 	if err != nil {
 		http.Error(w, "No content", http.StatusNoContent)
 		return

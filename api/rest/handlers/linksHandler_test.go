@@ -21,7 +21,7 @@ import (
 
 type HandlerSuite struct {
 	suite.Suite
-	handler *LinksHandler
+	handler *HandlerManager
 	service linker.Linker
 	storage storage.LinksStorage
 }
@@ -29,7 +29,7 @@ type HandlerSuite struct {
 func (s *HandlerSuite) SetupTest() {
 	s.storage = inmemory.NewLinksStorageMap()
 	s.service, _ = v1.NewDefaultLinker(s.storage)
-	s.handler, _ = NewLinksHandler(s.service)
+	s.handler, _ = NewHandlerManager(s.service)
 }
 
 func TestLinksHandlers(t *testing.T) {
@@ -183,6 +183,31 @@ func (s *HandlerSuite) TestApiSetLink() {
 	}
 }
 
+func (s *HandlerSuite) TestGetLinksByUser() {
+	tests := []struct {
+		name         string
+		expectedCode int
+	}{
+		{
+			"204",
+			204,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(s.getRouter())
+			defer ts.Close()
+
+			res, _ := testRequest(t, ts, http.MethodGet, "/user/urls", nil, map[string]string{})
+			defer func() {
+				_ = res.Body.Close()
+			}()
+
+			assert.Equal(t, tt.expectedCode, res.StatusCode)
+		})
+	}
+}
+
 func (s *HandlerSuite) TestCompressAndDecompressMiddlewares() {
 	tests := []struct {
 		name           string
@@ -231,6 +256,7 @@ func (s *HandlerSuite) getRouter() chi.Router {
 	router.Get("/{linkId}", s.handler.GetLink)
 	router.Post("/", s.handler.SetLink)
 	router.Post("/api/shorten", s.handler.APISetLink)
+	router.Get("/user/urls", s.handler.GetLinksByUser)
 
 	return router
 }

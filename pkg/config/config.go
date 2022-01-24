@@ -10,17 +10,20 @@ const (
 	envBaseURL         = "BASE_URL"
 	envFileStoragePath = "FILE_STORAGE_PATH"
 	envSecretKey       = "APP_KEY"
+	envDatabaseDSN     = "DATABASE_DSN"
 
 	defaultServerAddr      = "localhost:8080"
 	defaultBaseURL         = "http://localhost:8080"
 	defaultFileStoragePath = "links.json"
 	defaultSecretKey       = "secret-key"
+	defaultDatabaseDSN     = "postgres://forge:secret@localhost:9432/app?sslmode=disable"
 )
 
 var (
 	addr            *string
 	baseURL         *string
 	fileStoragePath *string
+	databaseDSN     *string
 	instance        *Config = nil
 )
 
@@ -29,12 +32,14 @@ type Config struct {
 	BaseURL         string
 	FileStoragePath string
 	SecretKey       string
+	DatabaseDSN     string
 }
 
 func init() {
 	addr = flag.String("a", "", "Server address and port (default localhost:8080)")
 	baseURL = flag.String("b", "", "Server url (http://localhost:8080)")
 	fileStoragePath = flag.String("f", "", "Path to file for links (default links.json)")
+	databaseDSN = flag.String("d", "", "Database connection string")
 }
 
 // GetConfig returns instance of Config
@@ -49,6 +54,7 @@ func GetConfig() *Config {
 		BaseURL:         getBaseURL(),
 		FileStoragePath: getFileStoragePath(),
 		SecretKey:       getEnv(envSecretKey, defaultSecretKey),
+		DatabaseDSN:     getDatabaseDSN(),
 	}
 
 	return instance
@@ -85,6 +91,17 @@ func getFileStoragePath() string {
 	}
 
 	return defaultFileStoragePath
+}
+
+func getDatabaseDSN() string {
+	if *databaseDSN != "" {
+		return *databaseDSN
+	}
+	if os.Getenv(envDatabaseDSN) != "" {
+		return os.Getenv(envDatabaseDSN)
+	}
+
+	return defaultDatabaseDSN
 }
 
 func getEnv(envName, defaultValue string) string {

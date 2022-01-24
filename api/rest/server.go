@@ -25,7 +25,7 @@ func RunServer(ctx context.Context) error {
 		return err
 	}
 
-	handler, err := handlers.NewLinksHandler(linker)
+	handler, err := handlers.NewHandlerManager(linker)
 	if err != nil {
 		return err
 	}
@@ -35,6 +35,7 @@ func RunServer(ctx context.Context) error {
 	router.Post("/", handler.SetLink)
 	router.Post("/api/shorten", handler.APISetLink)
 	router.Get("/user/urls", handler.GetLinksByUser)
+	router.Get("/ping", handler.PingDB)
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
