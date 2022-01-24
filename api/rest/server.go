@@ -7,7 +7,7 @@ import (
 	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/services/linker/v1"
-	"github.com/malyg1n/shortener/storage/filesystem"
+	"github.com/malyg1n/shortener/storage/pgsql"
 	"net/http"
 	"time"
 )
@@ -15,7 +15,7 @@ import (
 // RunServer init routes adn listen
 func RunServer(ctx context.Context) error {
 	cfg := config.GetConfig()
-	storage, err := filesystem.NewLinksStorageFile()
+	storage, err := pgsql.NewLinkStoragePG()
 	if err != nil {
 		return err
 	}

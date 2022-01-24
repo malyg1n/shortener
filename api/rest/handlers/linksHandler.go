@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// SetLink get and store url
+// SetLink get and store url.
 func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -33,7 +33,7 @@ func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(getFullURL(linkID)))
 }
 
-// GetLink redirects ro url
+// GetLink redirects ro url.
 func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "linkId")
 	ctx := r.Context()
@@ -47,7 +47,7 @@ func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-// APISetLink get and store url
+// APISetLink get and store url.
 func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	s := models.SetLinkRequest{}
@@ -78,10 +78,10 @@ func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
+// GetLinksByUser returns links bu user cookie.
 func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userUUID := ctx.Value(middleware.ContextUserKey).(string)
-	fmt.Println(userUUID)
 
 	links, err := hm.service.GetLinksByUser(ctx, userUUID)
 	if err != nil {
