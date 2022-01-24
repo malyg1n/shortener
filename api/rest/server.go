@@ -15,7 +15,7 @@ import (
 // RunServer init routes adn listen
 func RunServer(ctx context.Context) error {
 	cfg := config.GetConfig()
-	storage, err := pgsql.NewLinkStoragePG()
+	storage, err := pgsql.NewLinksStoragePG(ctx)
 	if err != nil {
 		return err
 	}
