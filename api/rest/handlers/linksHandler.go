@@ -30,7 +30,7 @@ func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(getFullURL(linkID)))
+	_, _ = w.Write([]byte(getFullURL(linkID)))
 }
 
 // GetLink redirects ro url.
@@ -75,7 +75,7 @@ func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write(result)
+	_, _ = w.Write(result)
 }
 
 // GetLinksByUser returns links bu user cookie.
@@ -103,7 +103,7 @@ func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request)
 	}
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(result)
+	_, _ = w.Write(result)
 }
 
 // APISetBatchLinks generate links by collection.
@@ -137,8 +137,8 @@ func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(result)
+	w.WriteHeader(http.StatusCreated)
+	_, _ = w.Write(result)
 }
 
 func getFullURL(linkID string) string {
