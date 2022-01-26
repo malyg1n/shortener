@@ -46,7 +46,7 @@ func NewLinksStoragePG(ctx context.Context) (*LinksStoragePG, error) {
 // SetLink stores link into database.
 func (l LinksStoragePG) SetLink(ctx context.Context, id, link, userUUID string) {
 	tx := l.db.MustBegin()
-	tx.MustExecContext(ctx, "insert into links (user_id, link_id, original_link) VALUES ($1, $2, $3)", userUUID, id, link)
+	tx.MustExecContext(ctx, "insert into links (user_id, link_id, original_link) values ($1, $2, $3)", userUUID, id, link)
 	_ = tx.Commit()
 }
 

@@ -106,6 +106,41 @@ func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request)
 	w.Write(result)
 }
 
+// APISetBatchLinks generate links by collection.
+func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userUUID := ctx.Value(middleware.ContextUserKey).(string)
+
+	dec := json.NewDecoder(r.Body)
+	inLinks := make([]models.SetBatchLinkRequest, 0)
+
+	if err := dec.Decode(&inLinks); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	outLinks := make([]models.SetBatchLinkResponse, 0)
+	for _, l := range inLinks {
+		link, err := hm.service.SetLink(ctx, l.OriginalURL, userUUID)
+		if err == nil {
+			outLinks = append(outLinks, models.SetBatchLinkResponse{
+				CorrelationID: l.CorrelationID,
+				ShortURL:      getFullURL(link),
+			})
+		}
+	}
+
+	result, err := json.Marshal(outLinks)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
 func getFullURL(linkID string) string {
 	cfg := config.GetConfig()
 	baseURL := strings.TrimRight(cfg.BaseURL, "/")

@@ -36,6 +36,7 @@ func RunServer(ctx context.Context) error {
 	router.Post("/api/shorten", handler.APISetLink)
 	router.Get("/user/urls", handler.GetLinksByUser)
 	router.Get("/ping", handler.PingDB)
+	router.Post("/api/shorten/batch", handler.APISetBatchLinks)
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
