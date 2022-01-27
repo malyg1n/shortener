@@ -52,17 +52,20 @@ func RunServer(ctx context.Context) error {
 	go func() {
 		err := srv.ListenAndServe()
 		fmt.Println(err.Error())
-		fmt.Println("server started")
+		fmt.Println("server stopped")
 	}()
 
 	<-ctx.Done()
+	fmt.Println("ctx done")
 
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), 150*time.Second)
+	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
+		fmt.Println("timeout context cancel")
 		cancel()
 	}()
 
-	_ = storage.Close()
+	e := storage.Close()
+	fmt.Println("storage closed", e)
 
 	return srv.Shutdown(ctxShutDown)
 }
