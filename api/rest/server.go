@@ -49,9 +49,7 @@ func RunServer(ctx context.Context) error {
 	}
 
 	go func() {
-		err := srv.ListenAndServe()
-		fmt.Println(err.Error())
-		fmt.Println("server started")
+		_ = srv.ListenAndServe()
 	}()
 
 	<-ctx.Done()
