@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 )
 
 // SetLink get and store url.
@@ -36,7 +35,6 @@ func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 
 // GetLink redirects ro url.
 func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
-	st := time.Now()
 	id := chi.URLParam(r, "linkId")
 	ctx := r.Context()
 	link, err := hm.service.GetLink(ctx, id)
@@ -44,7 +42,6 @@ func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println(time.Since(st))
 	w.Header().Set("Location", link)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
