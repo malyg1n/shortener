@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
 	"github.com/malyg1n/shortener/api/rest/middleware"
@@ -14,21 +15,25 @@ import (
 
 // RunServer init routes adn listen
 func RunServer(ctx context.Context) error {
+	fmt.Println("server starting")
 	cfg := config.GetConfig()
 	storage, err := pgsql.NewLinksStoragePG(ctx)
 	if err != nil {
 		return err
 	}
+	fmt.Println("storage started")
 
 	linker, err := v1.NewDefaultLinker(storage)
 	if err != nil {
 		return err
 	}
+	fmt.Println("linker started")
 
 	handler, err := handlers.NewHandlerManager(linker)
 	if err != nil {
 		return err
 	}
+	fmt.Println("storage started")
 
 	router := chi.NewRouter()
 	router.Get("/{linkId}", handler.GetLink)
@@ -44,7 +49,9 @@ func RunServer(ctx context.Context) error {
 	}
 
 	go func() {
-		_ = srv.ListenAndServe()
+		err := srv.ListenAndServe()
+		fmt.Println(err.Error())
+		fmt.Println("server started")
 	}()
 
 	<-ctx.Done()
