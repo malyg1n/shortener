@@ -33,7 +33,7 @@ func RunServer(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("storage started")
+	fmt.Println("handler started")
 
 	router := chi.NewRouter()
 	router.Get("/{linkId}", handler.GetLink)
