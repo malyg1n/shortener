@@ -252,7 +252,7 @@ func (s *HandlerSuite) TestDecompressMiddleware() {
 	})
 }
 
-func (s *HandlerSuite) TestSetBatchUrl() {
+func (s *HandlerSuite) TestExistsLink() {
 	s.T().Run("compress", func(t *testing.T) {
 		ts := httptest.NewServer(s.getRouter())
 		defer ts.Close()

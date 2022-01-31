@@ -45,6 +45,12 @@ func (s *DefaultLinker) SetLink(ctx context.Context, link, userUUID string) (str
 	if _, err := url.ParseRequestURI(link); err != nil {
 		return "", errs.ErrInvalidInput
 	}
+
+	existsLink, err := s.checkLinkIfExists(ctx, link)
+	if err == nil && existsLink != "" {
+		return existsLink, errs.ErrLinkExists
+	}
+
 	linkID := uuid.New().String()
 	s.storage.SetLink(ctx, linkID, link, userUUID)
 
@@ -54,4 +60,8 @@ func (s *DefaultLinker) SetLink(ctx context.Context, link, userUUID string) (str
 // GetLinksByUser returns links bu user uuid.
 func (s *DefaultLinker) GetLinksByUser(ctx context.Context, userUUID string) ([]model.Link, error) {
 	return s.storage.GetLinksByUser(ctx, userUUID)
+}
+
+func (s *DefaultLinker) checkLinkIfExists(ctx context.Context, url string) (string, error) {
+	return s.storage.GetLinkByOriginal(ctx, url)
 }

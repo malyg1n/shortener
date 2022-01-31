@@ -69,6 +69,17 @@ func (s *LinksStorageMap) GetLinksByUser(ctx context.Context, userUUID string) (
 	return links, nil
 }
 
+// GetLinkByOriginal returns links by original link.
+func (s *LinksStorageMap) GetLinkByOriginal(ctx context.Context, url string) (string, error) {
+	for k, v := range s.links.Links {
+		if url == v {
+			return k, nil
+		}
+	}
+
+	return "", errs.ErrNotFound
+}
+
 // Close storage
 func (s *LinksStorageMap) Close() error {
 	return nil

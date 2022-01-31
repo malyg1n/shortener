@@ -78,6 +78,17 @@ func (s *LinksStorageFile) GetLinksByUser(ctx context.Context, userUUID string) 
 	return links, nil
 }
 
+// GetLinkByOriginal returns links by original link.
+func (s *LinksStorageFile) GetLinkByOriginal(ctx context.Context, url string) (string, error) {
+	for k, v := range s.links.Links {
+		if url == v {
+			return k, nil
+		}
+	}
+
+	return "", errs.ErrNotFound
+}
+
 // Close file handler.
 func (s *LinksStorageFile) Close() error {
 	return s.uploadLinks()

@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/api/rest/models"
 	"github.com/malyg1n/shortener/pkg/config"
+	"github.com/malyg1n/shortener/pkg/errs"
 	"io"
 	"net/http"
 	"strings"
@@ -23,13 +25,18 @@ func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userUUID := ctx.Value(middleware.ContextUserKey).(string)
 	linkID, err := hm.service.SetLink(ctx, string(b), userUUID)
+	exitStatus := http.StatusCreated
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if !errors.Is(errs.ErrLinkExists, err) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		} else {
+			exitStatus = http.StatusConflict
+		}
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(exitStatus)
 	_, _ = w.Write([]byte(getFullURL(linkID)))
 }
 
@@ -58,10 +65,15 @@ func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userUUID := ctx.Value(middleware.ContextUserKey).(string)
 	linkID, err := hm.service.SetLink(ctx, s.URL, userUUID)
+	exitStatus := http.StatusCreated
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if !errors.Is(errs.ErrLinkExists, err) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		} else {
+			exitStatus = http.StatusConflict
+		}
 	}
 
 	res := models.SetLinkResponse{Result: getFullURL(linkID)}
@@ -73,7 +85,7 @@ func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(exitStatus)
 	_, _ = w.Write(result)
 }
 

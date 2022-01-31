@@ -78,6 +78,14 @@ func (l LinksStoragePG) GetLinksByUser(ctx context.Context, userUUID string) ([]
 	return links, err
 }
 
+// GetLinkByOriginal returns links by original link.
+func (l LinksStoragePG) GetLinkByOriginal(ctx context.Context, url string) (string, error) {
+	var link string
+	err := l.db.GetContext(ctx, &link, "select link_id from links where original_link = $1", url)
+
+	return link, err
+}
+
 // Close database handler.
 func (l LinksStoragePG) Close() error {
 	return l.db.Close()
