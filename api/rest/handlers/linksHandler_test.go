@@ -253,25 +253,46 @@ func (s *HandlerSuite) TestDecompressMiddleware() {
 }
 
 func (s *HandlerSuite) TestExistsLink() {
-	s.T().Run("compress", func(t *testing.T) {
-		ts := httptest.NewServer(s.getRouter())
-		defer ts.Close()
+	tests := []struct {
+		name         string
+		path         string
+		codeExpected int
+		link         string
+	}{
+		{
+			"#1",
+			"/",
+			201,
+			"https://google.com",
+		},
+		{
+			"#2",
+			"/",
+			409,
+			"https://google.com",
+		},
+		{
+			"#3",
+			"/api/shorten",
+			409,
+			`{"url": "https://google.com"}`,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			payload := strings.NewReader(tt.link)
 
-		res, body := testRequest(
-			t,
-			ts,
-			http.MethodPost,
-			"/api/shorten/batch",
-			strings.NewReader(`[{"correlation_id":"1","original_url":"https://ya.ru"}]`),
-			nil,
-		)
-		defer func() {
-			_ = res.Body.Close()
-		}()
+			ts := httptest.NewServer(s.getRouter())
+			defer ts.Close()
 
-		assert.Contains(t, body, `"correlation_id":"1"`)
-		assert.Contains(t, body, "short_url")
-	})
+			res, _ := testRequest(t, ts, http.MethodPost, tt.path, payload, map[string]string{})
+			defer func() {
+				_ = res.Body.Close()
+			}()
+
+			assert.Equal(t, tt.codeExpected, res.StatusCode)
+		})
+	}
 }
 
 func (s *HandlerSuite) getRouter() chi.Router {
