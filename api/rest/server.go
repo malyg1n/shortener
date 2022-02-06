@@ -5,56 +5,45 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
 	"github.com/malyg1n/shortener/api/rest/middleware"
-	"github.com/malyg1n/shortener/pkg/config"
-	"github.com/malyg1n/shortener/services/linker/v1"
-	"github.com/malyg1n/shortener/storage/pgsql"
+	"github.com/malyg1n/shortener/services/linker"
 	"net/http"
-	"time"
 )
 
-// RunServer init routes adn listen
-func RunServer(ctx context.Context) error {
-	cfg := config.GetConfig()
-	storage, err := pgsql.NewLinksStoragePG(ctx)
+// APIServer struct.
+type APIServer struct {
+	handlerManager *handlers.HandlerManager
+	server         *http.Server
+}
+
+// NewAPIServer creates new instance
+func NewAPIServer(service linker.Linker, addr string) (*APIServer, error) {
+	handler, err := handlers.NewHandlerManager(service)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	linker, err := v1.NewDefaultLinker(storage)
-	if err != nil {
-		return err
+	server := &APIServer{
+		handlerManager: handler,
+		server:         &http.Server{Addr: addr},
 	}
 
-	handler, err := handlers.NewHandlerManager(linker)
-	if err != nil {
-		return err
-	}
+	return server, nil
+}
+
+// Run server.
+func (srv *APIServer) Run(ctx context.Context) {
 
 	router := chi.NewRouter()
-	router.Get("/{linkId}", handler.GetLink)
-	router.Post("/", handler.SetLink)
-	router.Post("/api/shorten", handler.APISetLink)
-	router.Get("/user/urls", handler.GetLinksByUser)
-	router.Get("/ping", handler.PingDB)
-	router.Post("/api/shorten/batch", handler.APISetBatchLinks)
+	router.Get("/{linkId}", srv.handlerManager.GetLink)
+	router.Post("/", srv.handlerManager.SetLink)
+	router.Post("/api/shorten", srv.handlerManager.APISetLink)
+	router.Get("/user/urls", srv.handlerManager.GetLinksByUser)
+	router.Get("/ping", srv.handlerManager.PingDB)
+	router.Post("/api/shorten/batch", srv.handlerManager.APISetBatchLinks)
 
-	srv := &http.Server{
-		Addr:    cfg.Addr,
-		Handler: middleware.Compress(middleware.Decompress(middleware.Cookies(router))),
-	}
+	srv.server.Handler = middleware.Compress(middleware.Decompress(middleware.Cookies(router)))
 
 	go func() {
-		_ = srv.ListenAndServe()
+		_ = srv.server.ListenAndServe()
 	}()
-
-	<-ctx.Done()
-
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		cancel()
-	}()
-
-	_ = storage.Close()
-
-	return srv.Shutdown(ctxShutDown)
 }

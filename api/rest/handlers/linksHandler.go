@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/api/rest/models"
+	"github.com/malyg1n/shortener/model"
 	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/pkg/errs"
 	"io"
@@ -16,35 +17,50 @@ import (
 
 // SetLink get and store url.
 func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	ctx := r.Context()
-	userUUID := ctx.Value(middleware.ContextUserKey).(string)
-	linkID, err := hm.service.SetLink(ctx, string(b), userUUID)
+	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
+	if !ok {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
+
 	exitStatus := http.StatusCreated
+	linkID, err := hm.service.SetLink(ctx, string(b), userUUID)
 
 	if err != nil {
 		if !errors.Is(errs.ErrLinkExists, err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
-		} else {
-			exitStatus = http.StatusConflict
 		}
+		linkID, err = hm.service.GetLinkByOriginal(ctx, string(b))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		exitStatus = http.StatusConflict
 	}
 
 	w.WriteHeader(exitStatus)
-	_, _ = w.Write([]byte(getFullURL(linkID)))
+	_, err = w.Write([]byte(getFullURL(linkID)))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // GetLink redirects ro url.
 func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "linkId")
 	ctx := r.Context()
+
+	id := chi.URLParam(r, "linkId")
 	link, err := hm.service.GetLink(ctx, id)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -55,6 +71,8 @@ func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
 
 // APISetLink get and store url.
 func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	dec := json.NewDecoder(r.Body)
 	s := models.SetLinkRequest{}
 	if err := dec.Decode(&s); err != nil {
@@ -62,18 +80,26 @@ func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
-	userUUID := ctx.Value(middleware.ContextUserKey).(string)
-	linkID, err := hm.service.SetLink(ctx, s.URL, userUUID)
+	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
+	if !ok {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
+
 	exitStatus := http.StatusCreated
+	linkID, err := hm.service.SetLink(ctx, s.URL, userUUID)
 
 	if err != nil {
 		if !errors.Is(errs.ErrLinkExists, err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
-		} else {
-			exitStatus = http.StatusConflict
 		}
+		linkID, err = hm.service.GetLinkByOriginal(ctx, s.URL)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		exitStatus = http.StatusConflict
 	}
 
 	res := models.SetLinkResponse{Result: getFullURL(linkID)}
@@ -86,13 +112,21 @@ func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(exitStatus)
-	_, _ = w.Write(result)
+	_, err = w.Write(result)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // GetLinksByUser returns links bu user cookie.
 func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	userUUID := ctx.Value(middleware.ContextUserKey).(string)
+
+	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
+	if !ok {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
 
 	links, err := hm.service.GetLinksByUser(ctx, userUUID)
 	if err != nil {
@@ -114,13 +148,21 @@ func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request)
 	}
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(result)
+	_, err = w.Write(result)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // APISetBatchLinks generate links by collection.
 func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	userUUID := ctx.Value(middleware.ContextUserKey).(string)
+
+	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
+	if !ok {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
 
 	dec := json.NewDecoder(r.Body)
 	inLinks := make([]models.SetBatchLinkRequest, 0)
@@ -130,15 +172,27 @@ func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	outLinks := make([]models.SetBatchLinkResponse, 0)
-	for _, l := range inLinks {
-		link, err := hm.service.SetLink(ctx, l.OriginalURL, userUUID)
-		if err == nil {
-			outLinks = append(outLinks, models.SetBatchLinkResponse{
-				CorrelationID: l.CorrelationID,
-				ShortURL:      getFullURL(link),
-			})
+	canonicalLinks := make([]model.Link, len(inLinks))
+	for k, lnk := range inLinks {
+		canonicalLinks[k] = model.Link{
+			ShortURL:    "",
+			OriginalURL: lnk.OriginalURL,
 		}
+	}
+
+	links, err := hm.service.SetBatchLinks(ctx, canonicalLinks, userUUID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	outLinks := make([]models.SetBatchLinkResponse, 0)
+	for k, l := range inLinks {
+		link := links[k]
+		outLinks = append(outLinks, models.SetBatchLinkResponse{
+			CorrelationID: l.CorrelationID,
+			ShortURL:      getFullURL(link.ShortURL),
+		})
 	}
 
 	result, err := json.Marshal(outLinks)
@@ -149,7 +203,10 @@ func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write(result)
+	_, err = w.Write(result)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func getFullURL(linkID string) string {

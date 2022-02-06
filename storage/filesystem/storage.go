@@ -41,7 +41,7 @@ func NewLinksStorageFile() (*LinksStorageFile, error) {
 }
 
 // SetLink store link into collection.
-func (s *LinksStorageFile) SetLink(ctx context.Context, id, link, userUUID string) {
+func (s *LinksStorageFile) SetLink(ctx context.Context, id, link, userUUID string) error {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	s.links.Links[id] = link
@@ -50,6 +50,8 @@ func (s *LinksStorageFile) SetLink(ctx context.Context, id, link, userUUID strin
 		OriginalURL: link,
 	}
 	s.links.UserLinks[userUUID] = append(s.links.UserLinks[userUUID], linkModel)
+
+	return nil
 }
 
 // GetLink returns link from collection by id.
@@ -89,6 +91,21 @@ func (s *LinksStorageFile) GetLinkByOriginal(ctx context.Context, url string) (s
 	return "", errs.ErrNotFound
 }
 
+// SetBatchLinks set links from collection.
+func (s *LinksStorageFile) SetBatchLinks(ctx context.Context, links []model.Link, userUUID string) error {
+	for _, link := range links {
+		_, err := s.GetLinkByOriginal(ctx, link.OriginalURL)
+		if err != nil {
+			err := s.SetLink(ctx, link.ShortURL, link.OriginalURL, userUUID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Close file handler.
 func (s *LinksStorageFile) Close() error {
 	return s.uploadLinks()
@@ -125,4 +142,11 @@ func (s *LinksStorageFile) uploadLinks() error {
 	enc := json.NewEncoder(file)
 
 	return enc.Encode(s.links)
+}
+
+// Ping file handler.
+func (s *LinksStorageFile) Ping() error {
+	_, err := os.OpenFile(s.filename, os.O_RDONLY|os.O_CREATE, 0777)
+
+	return err
 }

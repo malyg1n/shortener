@@ -16,21 +16,25 @@ const (
 
 func Cookies(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var userID string
+
 		cookie, err := r.Cookie(userKey)
 		if err != nil {
-			userUUID := uuid.New().String()
-			encrypted, err := crypto.Encrypt(userUUID)
-			if err == nil {
-				r = r.WithContext(context.WithValue(r.Context(), ContextUserKey, userUUID))
-				http.SetCookie(w, &http.Cookie{Name: userKey, Value: encrypted, Path: "/"})
+			userID = uuid.New().String()
+			encrypted, err := crypto.Encrypt(userID)
+			if err != nil {
+				http.Error(w, "something went wrong", http.StatusInternalServerError)
+				return
 			}
+			http.SetCookie(w, &http.Cookie{Name: userKey, Value: encrypted, Path: "/"})
 		} else {
-			decrypted, err := crypto.Decrypt(cookie.Value)
-			if err == nil {
-				r = r.WithContext(context.WithValue(r.Context(), ContextUserKey, decrypted))
+			userID, err = crypto.Decrypt(cookie.Value)
+			if err != nil {
+				http.Error(w, "something went wrong", http.StatusInternalServerError)
+				return
 			}
 		}
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ContextUserKey, userID)))
 	})
 }

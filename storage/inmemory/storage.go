@@ -32,7 +32,7 @@ func NewLinksStorageMap() *LinksStorageMap {
 }
 
 // SetLink store link into collection.
-func (s *LinksStorageMap) SetLink(ctx context.Context, id, link, userUUID string) {
+func (s *LinksStorageMap) SetLink(ctx context.Context, id, link, userUUID string) error {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	s.links.Links[id] = link
@@ -41,6 +41,8 @@ func (s *LinksStorageMap) SetLink(ctx context.Context, id, link, userUUID string
 		OriginalURL: link,
 	}
 	s.links.UserLinks[userUUID] = append(s.links.UserLinks[userUUID], linkModel)
+
+	return nil
 }
 
 // GetLink returns link from collection by id.
@@ -80,7 +82,27 @@ func (s *LinksStorageMap) GetLinkByOriginal(ctx context.Context, url string) (st
 	return "", errs.ErrNotFound
 }
 
-// Close storage
+// SetBatchLinks set links from collection.
+func (s *LinksStorageMap) SetBatchLinks(ctx context.Context, links []model.Link, userUUID string) error {
+	for _, link := range links {
+		_, err := s.GetLinkByOriginal(ctx, link.OriginalURL)
+		if err != nil {
+			err := s.SetLink(ctx, link.ShortURL, link.OriginalURL, userUUID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// Close storage.
 func (s *LinksStorageMap) Close() error {
+	return nil
+}
+
+// Ping storage.
+func (s *LinksStorageMap) Ping() error {
 	return nil
 }

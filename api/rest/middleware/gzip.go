@@ -52,9 +52,7 @@ func Decompress(next http.Handler) http.Handler {
 		}
 
 		var b bytes.Buffer
-		_, err = b.ReadFrom(gz)
-
-		if err != nil {
+		if _, err = b.ReadFrom(gz); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

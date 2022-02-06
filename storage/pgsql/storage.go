@@ -36,7 +36,11 @@ func NewLinksStoragePG(ctx context.Context) (*LinksStoragePG, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.MustExec(schema)
+
+	_, err = db.Exec(schema)
+	if err != nil {
+		return nil, err
+	}
 
 	return &LinksStoragePG{
 		db: db,
@@ -44,10 +48,9 @@ func NewLinksStoragePG(ctx context.Context) (*LinksStoragePG, error) {
 }
 
 // SetLink stores link into database.
-func (l LinksStoragePG) SetLink(ctx context.Context, id, link, userUUID string) {
-	tx := l.db.MustBegin()
-	tx.MustExecContext(ctx, "insert into links (user_id, link_id, original_link) values ($1, $2, $3)", userUUID, id, link)
-	_ = tx.Commit()
+func (l LinksStoragePG) SetLink(ctx context.Context, id, link, userUUID string) error {
+	_, err := l.db.ExecContext(ctx, "insert into links (user_id, link_id, original_link) values ($1, $2, $3)", userUUID, id, link)
+	return err
 }
 
 // GetLink returns link from database by id.
@@ -86,7 +89,35 @@ func (l LinksStoragePG) GetLinkByOriginal(ctx context.Context, url string) (stri
 	return link, err
 }
 
+// SetBatchLinks set links from collection.
+func (l LinksStoragePG) SetBatchLinks(ctx context.Context, links []model.Link, userUUID string) error {
+	tx, err := l.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, link := range links {
+		_, err = tx.ExecContext(
+			ctx,
+			"insert into links (user_id, link_id, original_link) values ($1, $2, $3)",
+			userUUID,
+			link.ShortURL,
+			link.OriginalURL,
+		)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 // Close database handler.
 func (l LinksStoragePG) Close() error {
 	return l.db.Close()
+}
+
+// Ping database.
+func (l LinksStoragePG) Ping() error {
+	return l.db.Ping()
 }
