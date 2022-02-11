@@ -3,23 +3,37 @@ package main
 import (
 	"context"
 	"github.com/malyg1n/shortener/api/rest"
+	"github.com/malyg1n/shortener/pkg/config"
+	v1 "github.com/malyg1n/shortener/services/linker/v1"
+	"github.com/malyg1n/shortener/storage/pgsql"
 	"log"
-	"os"
 	"os/signal"
+	"syscall"
 )
 
 func main() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	ctx, ctxCancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer ctxCancel()
 
-	ctx, cancel := context.WithCancel(context.Background())
-
-	go func() {
-		<-c
-		cancel()
-	}()
-
-	if err := rest.RunServer(ctx); err != nil {
-		log.Printf("failed to serve:+%v\n", err)
+	storage, err := pgsql.NewLinksStoragePG(ctx)
+	if err != nil {
+		log.Fatalf("%v", err)
 	}
+
+	defer storage.Close()
+
+	service, err := v1.NewDefaultLinker(storage)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	cfg := config.GetConfig()
+
+	server, err := rest.NewAPIServer(service, cfg.Addr)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	server.Run(ctx)
+
+	<-ctx.Done()
 }

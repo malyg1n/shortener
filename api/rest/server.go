@@ -2,55 +2,60 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
-	"github.com/malyg1n/shortener/pkg/config"
-	"github.com/malyg1n/shortener/services/linker/v1"
-	"github.com/malyg1n/shortener/storage/filesystem"
+	"github.com/malyg1n/shortener/api/rest/middleware"
+	"github.com/malyg1n/shortener/services/linker"
+	"github.com/malyg1n/shortener/storage"
 	"net/http"
 	"time"
 )
 
-// RunServer init routes adn listen
-func RunServer(ctx context.Context) error {
-	cfg := config.GetConfig()
-	storage, err := filesystem.NewLinksStorageFile()
+// APIServer struct.
+type APIServer struct {
+	handlerManager *handlers.HandlerManager
+	server         *http.Server
+	storage        storage.LinksStorage
+}
+
+// NewAPIServer creates new instance
+func NewAPIServer(service linker.Linker, addr string) (*APIServer, error) {
+	handler, err := handlers.NewHandlerManager(service)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	linker, err := v1.NewDefaultLinker(storage)
-	if err != nil {
-		return err
+	server := &APIServer{
+		handlerManager: handler,
+		server:         &http.Server{Addr: addr},
 	}
 
-	handler, err := handlers.NewLinksHandler(linker)
-	if err != nil {
-		return err
-	}
+	return server, nil
+}
 
-	router := chi.NewRouter()
-	router.Get("/{linkId}", handler.GetLink)
-	router.Post("/", handler.SetLink)
-	router.Post("/api/shorten", handler.APISetLink)
+// Run server.
+func (srv *APIServer) Run(ctx context.Context) {
 
-	srv := &http.Server{
-		Addr:    cfg.Addr,
-		Handler: router,
-	}
+	router := chi.NewRouter().With(middleware.Compress, middleware.Decompress, middleware.Cookies)
+	router.Get("/{linkId}", srv.handlerManager.GetLink)
+	router.Post("/", srv.handlerManager.SetLink)
+	router.Post("/api/shorten", srv.handlerManager.APISetLink)
+	router.Get("/user/urls", srv.handlerManager.GetLinksByUser)
+	router.Get("/ping", srv.handlerManager.PingDB)
+	router.Post("/api/shorten/batch", srv.handlerManager.APISetBatchLinks)
+
+	srv.server.Handler = router
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	go func() {
-		_ = srv.ListenAndServe()
+		<-ctx.Done()
+		fmt.Println("shutdown")
+		srv.server.Shutdown(ctxShutdown)
 	}()
 
-	<-ctx.Done()
-
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		cancel()
+	go func() {
+		_ = srv.server.ListenAndServe()
 	}()
-
-	_ = storage.Close()
-
-	return srv.Shutdown(ctxShutDown)
 }

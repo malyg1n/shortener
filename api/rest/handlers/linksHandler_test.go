@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
+	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage"
@@ -20,7 +21,7 @@ import (
 
 type HandlerSuite struct {
 	suite.Suite
-	handler *LinksHandler
+	handler *HandlerManager
 	service linker.Linker
 	storage storage.LinksStorage
 }
@@ -28,7 +29,7 @@ type HandlerSuite struct {
 func (s *HandlerSuite) SetupTest() {
 	s.storage = inmemory.NewLinksStorageMap()
 	s.service, _ = v1.NewDefaultLinker(s.storage)
-	s.handler, _ = NewLinksHandler(s.service)
+	s.handler, _ = NewHandlerManager(s.service)
 }
 
 func TestLinksHandlers(t *testing.T) {
@@ -37,7 +38,7 @@ func TestLinksHandlers(t *testing.T) {
 
 func (s *HandlerSuite) TestGetLink() {
 	ctx := context.Background()
-	shortLinkID, _ := s.service.SetLink(ctx, "https://google.com")
+	shortLinkID, _ := s.service.SetLink(ctx, "https://google.com", "fake_uuid")
 	tests := []struct {
 		name         string
 		codeExpected int
@@ -68,7 +69,7 @@ func (s *HandlerSuite) TestGetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, _ := testRequest(t, ts, http.MethodGet, "/"+tt.id, nil)
+			res, _ := testRequest(t, ts, http.MethodGet, "/"+tt.id, nil, map[string]string{})
 			defer func() {
 				_ = res.Body.Close()
 			}()
@@ -108,7 +109,7 @@ func (s *HandlerSuite) TestSetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, _ := testRequest(t, ts, http.MethodPost, "/", payload)
+			res, _ := testRequest(t, ts, http.MethodPost, "/", payload, map[string]string{})
 			defer func() {
 				_ = res.Body.Close()
 			}()
@@ -169,7 +170,7 @@ func (s *HandlerSuite) TestApiSetLink() {
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, body := testRequest(t, ts, http.MethodPost, "/api/shorten", payload)
+			res, body := testRequest(t, ts, http.MethodPost, "/api/shorten", payload, map[string]string{})
 			defer func() {
 				_ = res.Body.Close()
 			}()
@@ -182,17 +183,135 @@ func (s *HandlerSuite) TestApiSetLink() {
 	}
 }
 
+func (s *HandlerSuite) TestGetLinksByUser() {
+	tests := []struct {
+		name         string
+		expectedCode int
+	}{
+		{
+			"204",
+			204,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(s.getRouter())
+			defer ts.Close()
+
+			res, _ := testRequest(t, ts, http.MethodGet, "/user/urls", nil, map[string]string{})
+			defer func() {
+				_ = res.Body.Close()
+			}()
+
+			assert.Equal(t, tt.expectedCode, res.StatusCode)
+		})
+	}
+}
+
+func (s *HandlerSuite) TestCompressMiddleware() {
+	s.T().Run("compress", func(t *testing.T) {
+		ts := httptest.NewServer(s.getRouter())
+		defer ts.Close()
+
+		res, _ := testRequest(
+			t,
+			ts,
+			http.MethodPost,
+			"/api/shorten",
+			strings.NewReader(`{"url": "https://google.com"}`),
+			map[string]string{"Accept-Encoding": "gzip"},
+		)
+		defer func() {
+			_ = res.Body.Close()
+		}()
+
+		assert.Equal(t, 201, res.StatusCode)
+		assert.Equal(t, "gzip", res.Header.Get("Content-Encoding"))
+	})
+}
+
+func (s *HandlerSuite) TestDecompressMiddleware() {
+	s.T().Run("compress", func(t *testing.T) {
+		ts := httptest.NewServer(s.getRouter())
+		defer ts.Close()
+
+		res, body := testRequest(
+			t,
+			ts,
+			http.MethodPost,
+			"/",
+			strings.NewReader(`https://google.com`),
+			map[string]string{"Content-Encoding": "gzip"},
+		)
+		defer func() {
+			_ = res.Body.Close()
+		}()
+
+		assert.Equal(t, 400, res.StatusCode)
+		assert.Equal(t, "gzip: invalid header", body)
+	})
+}
+
+func (s *HandlerSuite) TestExistsLink() {
+	tests := []struct {
+		name         string
+		path         string
+		codeExpected int
+		link         string
+	}{
+		{
+			"#1",
+			"/",
+			201,
+			"https://google.com",
+		},
+		{
+			"#2",
+			"/",
+			409,
+			"https://google.com",
+		},
+		{
+			"#3",
+			"/api/shorten",
+			409,
+			`{"url": "https://google.com"}`,
+		},
+	}
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			payload := strings.NewReader(tt.link)
+
+			ts := httptest.NewServer(s.getRouter())
+			defer ts.Close()
+
+			res, _ := testRequest(t, ts, http.MethodPost, tt.path, payload, map[string]string{})
+			defer func() {
+				_ = res.Body.Close()
+			}()
+
+			assert.Equal(t, tt.codeExpected, res.StatusCode)
+		})
+	}
+}
+
 func (s *HandlerSuite) getRouter() chi.Router {
-	router := chi.NewRouter()
+	router := chi.NewRouter().With(middleware.Compress, middleware.Decompress, middleware.Cookies)
 	router.Get("/{linkId}", s.handler.GetLink)
 	router.Post("/", s.handler.SetLink)
 	router.Post("/api/shorten", s.handler.APISetLink)
+	router.Get("/user/urls", s.handler.GetLinksByUser)
+	router.Post("/api/shorten/batch", s.handler.APISetBatchLinks)
 
 	return router
 }
 
-func testRequest(t *testing.T, ts *httptest.Server, method, path string, payload io.Reader) (*http.Response, string) {
+func testRequest(t *testing.T, ts *httptest.Server, method, path string, payload io.Reader, headers map[string]string) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, payload)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
 	require.NoError(t, err)
 
 	client := &http.Client{
@@ -200,7 +319,6 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string, payload
 			return http.ErrUseLastResponse
 		},
 	}
-
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 
