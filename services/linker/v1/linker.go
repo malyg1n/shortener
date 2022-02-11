@@ -92,3 +92,8 @@ func (s *DefaultLinker) GetLinksByUser(ctx context.Context, userUUID string) ([]
 func (s *DefaultLinker) GetLinkByOriginal(ctx context.Context, url string) (string, error) {
 	return s.storage.GetLinkByOriginal(ctx, url)
 }
+
+// PingStorage check availability storage.
+func (s *DefaultLinker) PingStorage() error {
+	return s.storage.Ping()
+}
