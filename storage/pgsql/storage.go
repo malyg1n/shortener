@@ -18,7 +18,9 @@ var (
 		user_id uuid null,
 		link_id uuid not null unique,
 		original_link text not null 
-	);`
+	);
+	alter table links add column if not exists is_deleted smallint not null default 0;
+	`
 )
 
 type LinksStoragePG struct {

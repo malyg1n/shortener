@@ -296,10 +296,7 @@ func (s *HandlerSuite) TestExistsLink() {
 }
 
 func (s *HandlerSuite) getRouter() chi.Router {
-	router := chi.NewRouter()
-	router.Use(middleware.Compress)
-	router.Use(middleware.Decompress)
-	router.Use(middleware.Cookies)
+	router := chi.NewRouter().With(middleware.Compress, middleware.Decompress, middleware.Cookies)
 	router.Get("/{linkId}", s.handler.GetLink)
 	router.Post("/", s.handler.SetLink)
 	router.Post("/api/shorten", s.handler.APISetLink)
