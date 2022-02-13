@@ -19,6 +19,7 @@ var (
 		link_id uuid not null unique,
 		original_link text not null 
 	);
+	alter table links add column if not exists is_deleted smallint not null default 0;
 	`
 )
 
@@ -55,11 +56,11 @@ func (l LinksStoragePG) SetLink(ctx context.Context, id, link, userUUID string) 
 }
 
 // GetLink returns link from database by id.
-func (l LinksStoragePG) GetLink(ctx context.Context, id string) (string, error) {
-	var link string
-	err := l.db.GetContext(ctx, &link, "select original_link from links where link_id = $1", id)
+func (l LinksStoragePG) GetLink(ctx context.Context, id string) (model.Link, error) {
+	var link dbModel.Link
+	err := l.db.GetContext(ctx, &link, "select original_link, is_deleted from links where link_id = $1", id)
 
-	return link, err
+	return link.ToCanonical(), err
 }
 
 // GetLinksByUser returns links by user.
@@ -111,6 +112,16 @@ func (l LinksStoragePG) SetBatchLinks(ctx context.Context, links []model.Link, u
 	}
 
 	return tx.Commit()
+}
+
+// MarkLinkAsRemoved marks links as removed.
+func (l LinksStoragePG) MarkLinkAsRemoved(ctx context.Context, link model.Link) error {
+	_, err := l.db.ExecContext(
+		ctx,
+		"update links set is_deleted=1 where user_id=$1 and link_id=$2",
+		link.UserUUID,
+		link.ShortURL)
+	return err
 }
 
 // Close database handler.

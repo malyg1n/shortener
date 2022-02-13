@@ -21,8 +21,9 @@ type LinksStorageFile struct {
 }
 
 type linkCollection struct {
-	UserLinks map[string][]model.Link
-	Links     map[string]string
+	UserLinks    map[string][]model.Link
+	Links        map[string]string
+	DeletedLinks map[string]string
 }
 
 // NewLinksStorageFile creates new LinksStorageMap instance.
@@ -31,8 +32,9 @@ func NewLinksStorageFile() (*LinksStorageFile, error) {
 	s := &LinksStorageFile{
 		filename: cfg.FileStoragePath,
 		links: linkCollection{
-			Links:     map[string]string{},
-			UserLinks: map[string][]model.Link{},
+			Links:        map[string]string{},
+			UserLinks:    map[string][]model.Link{},
+			DeletedLinks: map[string]string{},
 		},
 	}
 	_ = s.loadLinks()
@@ -55,14 +57,21 @@ func (s *LinksStorageFile) SetLink(ctx context.Context, id, link, userUUID strin
 }
 
 // GetLink returns link from collection by id.
-func (s *LinksStorageFile) GetLink(ctx context.Context, id string) (string, error) {
+func (s *LinksStorageFile) GetLink(ctx context.Context, id string) (model.Link, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 
-	link, ok := s.links.Links[id]
-	if !ok {
-		return "", errs.ErrNotFound
+	_, deleted := s.links.DeletedLinks[id]
+	link := model.Link{
+		ShortURL:  id,
+		IsDeleted: deleted,
 	}
+
+	lnk, ok := s.links.Links[id]
+	if !ok {
+		return link, errs.ErrNotFound
+	}
+	link.OriginalURL = lnk
 
 	return link, nil
 }
@@ -103,6 +112,20 @@ func (s *LinksStorageFile) SetBatchLinks(ctx context.Context, links []model.Link
 		}
 	}
 
+	return nil
+}
+
+// MarkLinkAsRemoved marks links as removed.
+func (s *LinksStorageFile) MarkLinkAsRemoved(ctx context.Context, link model.Link) error {
+	if _, ok := s.links.Links[link.ShortURL]; ok {
+		if uLinks, ok := s.links.UserLinks[link.UserUUID]; ok {
+			for _, mLink := range uLinks {
+				if mLink.ShortURL == link.ShortURL {
+					s.links.DeletedLinks[link.ShortURL] = mLink.OriginalURL
+				}
+			}
+		}
+	}
 	return nil
 }
 

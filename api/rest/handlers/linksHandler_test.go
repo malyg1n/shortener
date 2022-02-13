@@ -295,6 +295,37 @@ func (s *HandlerSuite) TestExistsLink() {
 	}
 }
 
+func (s *HandlerSuite) TestDeleteLinks() {
+	s.T().Run("delete", func(t *testing.T) {
+		ts := httptest.NewServer(s.getRouter())
+		defer ts.Close()
+
+		res, _ := testRequest(
+			t,
+			ts,
+			http.MethodDelete,
+			"/user/urls",
+			strings.NewReader(`["fake-string"]`),
+			map[string]string{},
+		)
+
+		assert.Equal(t, 202, res.StatusCode)
+
+		ctx := context.Background()
+		shortLinkID, _ := s.service.SetLink(ctx, "https://google.com", "fake_uuid")
+
+		res, _ = testRequest(t, ts, http.MethodGet, "/"+shortLinkID, nil, map[string]string{})
+		assert.Equal(t, 307, res.StatusCode)
+
+		s.service.DeleteLinks(ctx, []string{shortLinkID}, "fake_uuid")
+
+		res, _ = testRequest(t, ts, http.MethodGet, "/"+shortLinkID, nil, map[string]string{})
+		assert.Equal(t, 410, res.StatusCode)
+
+		_ = res.Body.Close()
+	})
+}
+
 func (s *HandlerSuite) getRouter() chi.Router {
 	router := chi.NewRouter().With(middleware.Compress, middleware.Decompress, middleware.Cookies)
 	router.Get("/{linkId}", s.handler.GetLink)
@@ -302,6 +333,7 @@ func (s *HandlerSuite) getRouter() chi.Router {
 	router.Post("/api/shorten", s.handler.APISetLink)
 	router.Get("/user/urls", s.handler.GetLinksByUser)
 	router.Post("/api/shorten/batch", s.handler.APISetBatchLinks)
+	router.Delete("/user/urls", s.handler.DeleteUserLinks)
 
 	return router
 }

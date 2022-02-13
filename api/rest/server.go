@@ -44,6 +44,7 @@ func (srv *APIServer) Run(ctx context.Context) {
 	router.Get("/user/urls", srv.handlerManager.GetLinksByUser)
 	router.Get("/ping", srv.handlerManager.PingDB)
 	router.Post("/api/shorten/batch", srv.handlerManager.APISetBatchLinks)
+	router.Delete("/user/urls", srv.handlerManager.DeleteUserLinks)
 
 	srv.server.Handler = router
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
