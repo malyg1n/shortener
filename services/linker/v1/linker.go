@@ -44,7 +44,7 @@ func (s *DefaultLinker) GetLink(ctx context.Context, id string) (string, error) 
 		return "", err
 	}
 
-	if link.IsDeleted == true {
+	if link.IsDeleted {
 		return "", errs.ErrLinkRemoved
 	}
 
