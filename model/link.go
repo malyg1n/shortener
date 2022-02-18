@@ -4,4 +4,6 @@ package model
 type Link struct {
 	ShortURL    string
 	OriginalURL string
+	UserUUID    string
+	IsDeleted   bool
 }

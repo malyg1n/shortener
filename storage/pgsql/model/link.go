@@ -11,6 +11,7 @@ type Link struct {
 	UserID      sql.NullString `db:"user_id"`
 	LinkID      string         `db:"link_id"`
 	OriginalURL string         `db:"original_link"`
+	IsDeleted   int            `db:"is_deleted"`
 }
 
 // ToCanonical converts a DB object to canonical model.
@@ -18,5 +19,6 @@ func (l Link) ToCanonical() model.Link {
 	return model.Link{
 		ShortURL:    l.LinkID,
 		OriginalURL: l.OriginalURL,
+		IsDeleted:   l.IsDeleted != 0,
 	}
 }

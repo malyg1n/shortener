@@ -62,6 +62,10 @@ func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
 	link, err := hm.service.GetLink(ctx, id)
 
 	if err != nil {
+		if errors.Is(errs.ErrLinkRemoved, err) {
+			http.Error(w, err.Error(), http.StatusGone)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -207,6 +211,29 @@ func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// DeleteUserLinks delete links.
+func (hm *HandlerManager) DeleteUserLinks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
+	if !ok {
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	ids := make([]string, 0)
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&ids)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	hm.service.DeleteLinks(ctx, ids, userUUID)
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func getFullURL(linkID string) string {
