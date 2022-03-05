@@ -112,11 +112,11 @@ func (s *DefaultLinker) PingStorage() error {
 func (s *DefaultLinker) DeleteLinks(ctx context.Context, urls []string, userUUID string) {
 	for _, val := range urls {
 		link := model.Link{ShortURL: val, UserUUID: userUUID}
-		go func() {
-			err := s.storage.MarkLinkAsRemoved(ctx, link)
+		go func(link model.Link) {
+			err := s.storage.MarkLinkAsRemoved(context.Background(), link)
 			if err != nil {
 				log.Println(err.Error())
 			}
-		}()
+		}(link)
 	}
 }

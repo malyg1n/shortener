@@ -41,7 +41,7 @@ func (srv *APIServer) Run(ctx context.Context) {
 	router.Get("/{linkId}", srv.handlerManager.GetLink)
 	router.Post("/", srv.handlerManager.SetLink)
 	router.Post("/api/shorten", srv.handlerManager.APISetLink)
-	router.Get("/user/urls", srv.handlerManager.GetLinksByUser)
+	router.Get("/api/user/urls", srv.handlerManager.GetLinksByUser)
 	router.Get("/ping", srv.handlerManager.PingDB)
 	router.Post("/api/shorten/batch", srv.handlerManager.APISetBatchLinks)
 	router.Delete("/api/user/urls", srv.handlerManager.DeleteUserLinks)
