@@ -2,7 +2,6 @@ package inmemory
 
 import (
 	"context"
-	"fmt"
 	"github.com/malyg1n/shortener/model"
 	"github.com/malyg1n/shortener/pkg/errs"
 	"github.com/malyg1n/shortener/storage"
@@ -111,7 +110,6 @@ func (s *LinksStorageMap) SetBatchLinks(ctx context.Context, links []model.Link,
 func (s *LinksStorageMap) MarkLinkAsRemoved(ctx context.Context, link model.Link) error {
 	if _, ok := s.links.Links[link.ShortURL]; ok {
 		if uLinks, ok := s.links.UserLinks[link.UserUUID]; ok {
-			fmt.Println(uLinks)
 			for _, mLink := range uLinks {
 				if mLink.ShortURL == link.ShortURL {
 					s.links.DeletedLinks[link.ShortURL] = mLink.OriginalURL
