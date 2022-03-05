@@ -8,7 +8,6 @@ import (
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/storage"
 	"net/http"
-	"net/http/pprof"
 	"time"
 )
 
@@ -37,9 +36,11 @@ func NewAPIServer(service linker.Linker, addr string) (*APIServer, error) {
 // Run server.
 func (srv *APIServer) Run(ctx context.Context) {
 
-	router := chi.NewRouter().With(middleware.Compress, middleware.Decompress, middleware.Cookies)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	router := chi.NewRouter().With(
+		middleware.Compress,
+		middleware.Decompress,
+		middleware.Cookies,
+	)
 
 	router.Get("/{linkId}", srv.handlerManager.GetLink)
 	router.Post("/", srv.handlerManager.SetLink)

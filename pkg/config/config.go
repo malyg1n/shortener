@@ -12,7 +12,7 @@ const (
 	envSecretKey       = "APP_KEY"
 	envDatabaseDSN     = "DATABASE_DSN"
 
-	defaultServerAddr      = "localhost:8080"
+	defaultServerAddr      = ":8080"
 	defaultBaseURL         = "http://localhost:8080"
 	defaultFileStoragePath = "links.json"
 	defaultSecretKey       = "secret-key"
