@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/url"
 	"regexp"
-	"sync"
 )
 
 // DefaultLinker implements Linker.
@@ -111,48 +110,13 @@ func (s *DefaultLinker) PingStorage() error {
 
 // DeleteLinks marks links as removed.
 func (s *DefaultLinker) DeleteLinks(ctx context.Context, urls []string, userUUID string) {
-	chs := make([]chan struct{}, 0, len(urls))
 	for _, val := range urls {
 		link := model.Link{ShortURL: val, UserUUID: userUUID}
-		chs = append(chs, s.newLinkRemover(ctx, link))
+		go func() {
+			err := s.storage.MarkLinkAsRemoved(ctx, link)
+			if err != nil {
+				log.Println(err.Error())
+			}
+		}()
 	}
-	for v := range s.fanIn(chs...) {
-		_ = v
-	}
-}
-
-func (s *DefaultLinker) newLinkRemover(ctx context.Context, link model.Link) chan struct{} {
-	outCh := make(chan struct{})
-
-	go func() {
-		err := s.storage.MarkLinkAsRemoved(ctx, link)
-		if err != nil {
-			log.Println(err)
-		}
-		outCh <- struct{}{}
-		close(outCh)
-	}()
-
-	return outCh
-}
-
-func (s *DefaultLinker) fanIn(inputChs ...chan struct{}) chan struct{} {
-	out := make(chan struct{})
-	go func() {
-		wg := &sync.WaitGroup{}
-		for _, inpChan := range inputChs {
-			wg.Add(1)
-			go func(inp chan struct{}) {
-				defer wg.Done()
-				for item := range inp {
-					out <- item
-				}
-			}(inpChan)
-		}
-
-		wg.Wait()
-		close(out)
-	}()
-
-	return out
 }

@@ -219,7 +219,7 @@ func (hm *HandlerManager) DeleteUserLinks(w http.ResponseWriter, r *http.Request
 
 	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
 	if !ok {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		http.Error(w, "could not parse user from token as string", http.StatusInternalServerError)
 		return
 	}
 
@@ -228,6 +228,7 @@ func (hm *HandlerManager) DeleteUserLinks(w http.ResponseWriter, r *http.Request
 	err := dec.Decode(&ids)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	hm.service.DeleteLinks(ctx, ids, userUUID)
