@@ -13,14 +13,11 @@ import (
 
 func main() {
 	ctx, ctxCancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer ctxCancel()
 
 	storage, err := pgsql.NewLinksStoragePG(ctx)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-
-	defer storage.Close()
 
 	service, err := v1.NewDefaultLinker(storage)
 	if err != nil {
@@ -36,4 +33,7 @@ func main() {
 	server.Run(ctx)
 
 	<-ctx.Done()
+
+	storage.Close()
+	ctxCancel()
 }
