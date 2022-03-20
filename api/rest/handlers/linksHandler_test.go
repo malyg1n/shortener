@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 type HandlerSuite struct {
@@ -321,6 +322,7 @@ func (s *HandlerSuite) TestDeleteLinks() {
 
 		s.service.DeleteLinks(ctx, []string{shortLinkID}, "fake_uuid")
 
+		time.Sleep(time.Millisecond * 200)
 		res, _ = testRequest(t, ts, http.MethodGet, "/"+shortLinkID, nil, map[string]string{})
 		assert.Equal(t, 410, res.StatusCode)
 		_ = res.Body.Close()

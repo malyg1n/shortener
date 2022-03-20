@@ -190,7 +190,7 @@ func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	outLinks := make([]models.SetBatchLinkResponse, 0)
+	outLinks := make([]models.SetBatchLinkResponse, 0, len(links))
 	for k, l := range inLinks {
 		link := links[k]
 		outLinks = append(outLinks, models.SetBatchLinkResponse{

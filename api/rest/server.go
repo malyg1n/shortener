@@ -2,7 +2,6 @@ package rest
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
 	"github.com/malyg1n/shortener/api/rest/middleware"
@@ -37,7 +36,12 @@ func NewAPIServer(service linker.Linker, addr string) (*APIServer, error) {
 // Run server.
 func (srv *APIServer) Run(ctx context.Context) {
 
-	router := chi.NewRouter().With(middleware.Compress, middleware.Decompress, middleware.Cookies)
+	router := chi.NewRouter().With(
+		middleware.Compress,
+		middleware.Decompress,
+		middleware.Cookies,
+	)
+
 	router.Get("/{linkId}", srv.handlerManager.GetLink)
 	router.Post("/", srv.handlerManager.SetLink)
 	router.Post("/api/shorten", srv.handlerManager.APISetLink)
@@ -52,7 +56,6 @@ func (srv *APIServer) Run(ctx context.Context) {
 
 	go func() {
 		<-ctx.Done()
-		fmt.Println("shutdown")
 		srv.server.Shutdown(ctxShutdown)
 	}()
 

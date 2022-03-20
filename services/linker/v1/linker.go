@@ -71,7 +71,7 @@ func (s *DefaultLinker) SetLink(ctx context.Context, link, userUUID string) (str
 }
 
 func (s *DefaultLinker) SetBatchLinks(ctx context.Context, links []model.Link, userUUID string) ([]model.Link, error) {
-	insertLinks := make([]model.Link, 0)
+	insertLinks := make([]model.Link, 0, len(links))
 	for k, lnk := range links {
 		shortLink, err := s.GetLinkByOriginal(ctx, lnk.OriginalURL)
 		if err != nil {

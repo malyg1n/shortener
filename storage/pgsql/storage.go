@@ -66,7 +66,6 @@ func (l LinksStoragePG) GetLink(ctx context.Context, id string) (model.Link, err
 // GetLinksByUser returns links by user.
 func (l LinksStoragePG) GetLinksByUser(ctx context.Context, userUUID string) ([]model.Link, error) {
 	var dbLinks []dbModel.Link
-	var links []model.Link
 	err := l.db.SelectContext(ctx, &dbLinks, "select * from links where user_id = $1", userUUID)
 	if err != nil {
 		return nil, err
@@ -75,6 +74,8 @@ func (l LinksStoragePG) GetLinksByUser(ctx context.Context, userUUID string) ([]
 	if len(dbLinks) == 0 {
 		return nil, errs.ErrNotFound
 	}
+
+	links := make([]model.Link, 0, len(dbLinks))
 
 	for _, dbLink := range dbLinks {
 		links = append(links, dbLink.ToCanonical())

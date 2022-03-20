@@ -12,11 +12,11 @@ const (
 	envSecretKey       = "APP_KEY"
 	envDatabaseDSN     = "DATABASE_DSN"
 
-	defaultServerAddr      = "localhost:8080"
+	defaultServerAddr      = ":8080"
 	defaultBaseURL         = "http://localhost:8080"
 	defaultFileStoragePath = "links.json"
 	defaultSecretKey       = "secret-key"
-	defaultDatabaseDSN     = "postgres://forge:secret@localhost:9432/app?sslmode=disable"
+	defaultDatabaseDSN     = "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable"
 )
 
 var (
