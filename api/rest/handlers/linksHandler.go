@@ -18,16 +18,15 @@ import (
 // SetLink get and store url.
 func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
+	if !ok {
+		http.Error(w, "could not parse user from token as string", http.StatusInternalServerError)
+		return
+	}
 
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
-	if !ok {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
 
@@ -48,10 +47,7 @@ func (hm *HandlerManager) SetLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(exitStatus)
-	_, err = w.Write([]byte(getFullURL(linkID)))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	w.Write([]byte(getFullURL(linkID)))
 }
 
 // GetLink redirects ro url.
@@ -76,17 +72,16 @@ func (hm *HandlerManager) GetLink(w http.ResponseWriter, r *http.Request) {
 // APISetLink get and store url.
 func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
+	if !ok {
+		http.Error(w, "could not parse user from token as string", http.StatusInternalServerError)
+		return
+	}
 
 	dec := json.NewDecoder(r.Body)
 	s := models.SetLinkRequest{}
 	if err := dec.Decode(&s); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
-	if !ok {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
 
@@ -116,10 +111,7 @@ func (hm *HandlerManager) APISetLink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(exitStatus)
-	_, err = w.Write(result)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	w.Write(result)
 }
 
 // GetLinksByUser returns links bu user cookie.
@@ -128,7 +120,7 @@ func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request)
 
 	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
 	if !ok {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		http.Error(w, "could not parse user from token as string", http.StatusInternalServerError)
 		return
 	}
 
@@ -152,10 +144,7 @@ func (hm *HandlerManager) GetLinksByUser(w http.ResponseWriter, r *http.Request)
 	}
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(result)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	w.Write(result)
 }
 
 // APISetBatchLinks generate links by collection.
@@ -164,7 +153,7 @@ func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Reques
 
 	userUUID, ok := ctx.Value(middleware.ContextUserKey).(string)
 	if !ok {
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		http.Error(w, "could not parse user from token as string", http.StatusInternalServerError)
 		return
 	}
 
@@ -207,10 +196,7 @@ func (hm *HandlerManager) APISetBatchLinks(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write(result)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	w.Write(result)
 }
 
 // DeleteUserLinks delete links.
