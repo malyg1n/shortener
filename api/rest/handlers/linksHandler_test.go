@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/services/linker/v1"
@@ -78,6 +79,49 @@ func (s *HandlerSuite) TestGetLink() {
 			assert.Equal(t, tt.codeExpected, res.StatusCode)
 			assert.Equal(t, tt.linkExpected, res.Header.Get("Location"))
 		})
+	}
+}
+
+func (s *HandlerSuite) TestUserContextErrors() {
+	endpoints := []struct {
+		method  string
+		url     string
+		handler http.HandlerFunc
+	}{
+		{
+			method:  "POST",
+			url:     "/",
+			handler: s.handler.SetLink,
+		},
+		{
+			method:  "POST",
+			url:     "/api/shorten",
+			handler: s.handler.APISetLink,
+		},
+		{
+			method:  "GET",
+			url:     "/user/urls",
+			handler: s.handler.GetLinksByUser,
+		},
+		{
+			method:  "DELETE",
+			url:     "/user/urls",
+			handler: s.handler.DeleteUserLinks,
+		},
+		{
+			method:  "POST",
+			url:     "/api/shorten/batch",
+			handler: s.handler.APISetBatchLinks,
+		},
+	}
+	for _, en := range endpoints {
+		req, err := http.NewRequest(en.method, en.url, strings.NewReader(""))
+		assert.NoError(s.T(), err)
+
+		rr := httptest.NewRecorder()
+		en.handler.ServeHTTP(rr, req)
+		assert.Equal(s.T(), rr.Code, http.StatusInternalServerError)
+		assert.Equal(s.T(), strings.TrimSpace(rr.Body.String()), "could not parse user from token as string")
 	}
 }
 
@@ -184,29 +228,73 @@ func (s *HandlerSuite) TestApiSetLink() {
 	}
 }
 
-func (s *HandlerSuite) TestGetLinksByUser() {
+func (s *HandlerSuite) TestApiSetBatchLinks() {
 	tests := []struct {
 		name         string
-		expectedCode int
+		codeExpected int
+		jsonBody     string
+		error        string
 	}{
 		{
-			"204",
-			204,
+			"400",
+			400,
+			`{"url": "https://google.com"}`,
+			"",
+		},
+		{
+			"201",
+			201,
+			`[{"correlation_id": "1", "original_url": "https://google.com"}]`,
+			"",
 		},
 	}
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
+			payload := strings.NewReader(tt.jsonBody)
+
 			ts := httptest.NewServer(s.getRouter())
 			defer ts.Close()
 
-			res, _ := testRequest(t, ts, http.MethodGet, "/user/urls", nil, map[string]string{})
+			res, body := testRequest(t, ts, http.MethodPost, "/api/shorten/batch", payload, map[string]string{})
 			defer func() {
 				_ = res.Body.Close()
 			}()
 
-			assert.Equal(t, tt.expectedCode, res.StatusCode)
+			assert.Equal(t, tt.codeExpected, res.StatusCode)
+			if tt.error != "" {
+				assert.Equal(t, tt.error, body)
+			}
 		})
 	}
+}
+
+func (s *HandlerSuite) TestGetLinksByUserNoContent() {
+	req, err := http.NewRequest("GET", "/user/urls", nil)
+	assert.NoError(s.T(), err)
+
+	rr := httptest.NewRecorder()
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, middleware.ContextUserKey, "abc123")
+	req = req.WithContext(ctx)
+
+	s.handler.GetLinksByUser(rr, req)
+	assert.Equal(s.T(), rr.Code, http.StatusNoContent)
+}
+
+func (s *HandlerSuite) TestGetLinksByUser() {
+	req, err := http.NewRequest("GET", "/user/urls", nil)
+	assert.NoError(s.T(), err)
+	userUUID := uuid.New().String()
+
+	rr := httptest.NewRecorder()
+	ctx := req.Context()
+	ctx = context.WithValue(ctx, middleware.ContextUserKey, userUUID)
+	req = req.WithContext(ctx)
+
+	s.service.SetLink(ctx, "https://ya.ru", userUUID)
+
+	s.handler.GetLinksByUser(rr, req)
+	assert.Equal(s.T(), rr.Code, http.StatusOK)
 }
 
 func (s *HandlerSuite) TestCompressMiddleware() {

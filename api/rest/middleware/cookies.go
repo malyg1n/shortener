@@ -21,7 +21,8 @@ func Cookies(next http.Handler) http.Handler {
 		cookie, err := r.Cookie(userKey)
 		if err != nil {
 			userID = uuid.New().String()
-			encrypted, err := crypto.Encrypt(userID)
+			var encrypted string
+			encrypted, err = crypto.Encrypt(userID)
 			if err != nil {
 				http.Error(w, "something went wrong", http.StatusInternalServerError)
 				return
