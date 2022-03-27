@@ -8,6 +8,7 @@ import (
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/storage"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -19,15 +20,21 @@ type APIServer struct {
 }
 
 // NewAPIServer creates new instance
-func NewAPIServer(service linker.Linker, addr string) (*APIServer, error) {
+func NewAPIServer(service linker.Linker, addr string, useTLS bool) (*APIServer, error) {
 	handler, err := handlers.NewHandlerManager(service)
 	if err != nil {
 		return nil, err
 	}
 
+	srv := &http.Server{Addr: addr}
+
+	if useTLS {
+		srv.Addr = ":443"
+	}
+
 	server := &APIServer{
 		handlerManager: handler,
-		server:         &http.Server{Addr: addr},
+		server:         srv,
 	}
 
 	return server, nil
@@ -60,6 +67,12 @@ func (srv *APIServer) Run(ctx context.Context) {
 	}()
 
 	go func() {
-		_ = srv.server.ListenAndServe()
+		if strings.Contains(srv.server.Addr, ":443") {
+			srv.server.Addr = ""
+			_ = srv.server.ListenAndServeTLS("cache-dir/cert.crt", "cache-dir/key.key")
+		} else {
+			_ = srv.server.ListenAndServe()
+		}
+
 	}()
 }

@@ -11,6 +11,7 @@ const (
 	envFileStoragePath = "FILE_STORAGE_PATH"
 	envSecretKey       = "APP_KEY"
 	envDatabaseDSN     = "DATABASE_DSN"
+	envEnableHTTPS     = "ENABLE_HTTPS"
 
 	defaultServerAddr      = ":8080"
 	defaultBaseURL         = "http://localhost:8080"
@@ -25,6 +26,7 @@ var (
 	fileStoragePath *string
 	databaseDSN     *string
 	instance        *Config = nil
+	enableHTTPS     *bool
 )
 
 type Config struct {
@@ -33,6 +35,7 @@ type Config struct {
 	FileStoragePath string
 	SecretKey       string
 	DatabaseDSN     string
+	EnableHTTPS     bool
 }
 
 func init() {
@@ -40,6 +43,7 @@ func init() {
 	baseURL = flag.String("b", "", "Server url (http://localhost:8080)")
 	fileStoragePath = flag.String("f", "", "Path to file for links (default links.json)")
 	databaseDSN = flag.String("d", "", "Database connection string")
+	enableHTTPS = flag.Bool("s", false, "Enable https")
 }
 
 // GetConfig returns instance of Config
@@ -55,6 +59,7 @@ func GetConfig() *Config {
 		FileStoragePath: getFileStoragePath(),
 		SecretKey:       getEnv(envSecretKey, defaultSecretKey),
 		DatabaseDSN:     getDatabaseDSN(),
+		EnableHTTPS:     getEnableHTTPS(),
 	}
 
 	return instance
@@ -102,6 +107,18 @@ func getDatabaseDSN() string {
 	}
 
 	return defaultDatabaseDSN
+}
+
+func getEnableHTTPS() bool {
+	if *enableHTTPS == true {
+		return true
+	}
+
+	if os.Getenv(envEnableHTTPS) == "true" || os.Getenv(envEnableHTTPS) == "1" {
+		return true
+	}
+
+	return false
 }
 
 func getEnv(envName, defaultValue string) string {

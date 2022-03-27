@@ -48,7 +48,7 @@ func main() {
 	}
 	cfg := config.GetConfig()
 
-	server, err := rest.NewAPIServer(service, cfg.Addr)
+	server, err := rest.NewAPIServer(service, cfg.Addr, cfg.EnableHTTPS)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
