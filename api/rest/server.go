@@ -2,13 +2,14 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/malyg1n/shortener/api/rest/handlers"
 	"github.com/malyg1n/shortener/api/rest/middleware"
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/storage"
+	"log"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -17,10 +18,13 @@ type APIServer struct {
 	handlerManager *handlers.HandlerManager
 	server         *http.Server
 	storage        storage.LinksStorage
+	useSSL         bool
+	SSLCert        string
+	SSLKey         string
 }
 
 // NewAPIServer creates new instance
-func NewAPIServer(service linker.Linker, addr string, useTLS bool) (*APIServer, error) {
+func NewAPIServer(service linker.Linker, addr string, useSSL bool, sslCert, sslKey string) (*APIServer, error) {
 	handler, err := handlers.NewHandlerManager(service)
 	if err != nil {
 		return nil, err
@@ -28,13 +32,16 @@ func NewAPIServer(service linker.Linker, addr string, useTLS bool) (*APIServer, 
 
 	srv := &http.Server{Addr: addr}
 
-	if useTLS {
-		srv.Addr = ":443"
-	}
-
 	server := &APIServer{
 		handlerManager: handler,
 		server:         srv,
+		useSSL:         useSSL,
+	}
+
+	if useSSL {
+		server.server.Addr = ""
+		server.SSLCert = sslCert
+		server.SSLKey = sslKey
 	}
 
 	return server, nil
@@ -67,11 +74,14 @@ func (srv *APIServer) Run(ctx context.Context) {
 	}()
 
 	go func() {
-		if strings.Contains(srv.server.Addr, ":443") {
-			srv.server.Addr = ""
-			_ = srv.server.ListenAndServeTLS("cache-dir/cert.crt", "cache-dir/key.key")
+		if srv.useSSL {
+			log.Println("server stated at localhost:443")
+			err := srv.server.ListenAndServeTLS(srv.SSLCert, srv.SSLKey)
+			log.Println(err.Error())
 		} else {
-			_ = srv.server.ListenAndServe()
+			log.Println(fmt.Sprintf("server stated at %s", srv.server.Addr))
+			err := srv.server.ListenAndServe()
+			log.Println(err.Error())
 		}
 
 	}()
