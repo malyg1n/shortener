@@ -111,7 +111,7 @@ func getDatabaseDSN() string {
 
 func getEnableHTTPS() bool {
 	if *enableHTTPS == true {
-		return true
+		return *enableHTTPS
 	}
 
 	if os.Getenv(envEnableHTTPS) == "true" || os.Getenv(envEnableHTTPS) == "1" {
