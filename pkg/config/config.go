@@ -26,6 +26,7 @@ const (
 	envEnableHTTPS     = "enable_https"
 	envSSLCert         = "ssl_cert"
 	envSSLKey          = "ssl_key"
+	envConfigFilePath  = "config"
 
 	defaultServerAddr      = ":8080"
 	defaultBaseURL         = "http://localhost:8080"
@@ -34,6 +35,7 @@ const (
 	defaultDatabaseDSN     = "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable"
 	defaultSSLCert         = "certs/cert.crt"
 	defaultSSLKey          = "certs/key.key"
+	defaultConfigFilePath  = ""
 )
 
 var instance *Config
@@ -46,8 +48,9 @@ func init() {
 	pflag.StringP(envFileStoragePath, "f", defaultFileStoragePath, "base url")
 	pflag.StringP(envSecretKey, "k", defaultSecretKey, "secret key for app")
 	pflag.BoolP(envEnableHTTPS, "s", false, "use https")
-	pflag.StringP(envSSLCert, "c", defaultSSLCert, "ssl cert file")
+	pflag.StringP(envSSLCert, "r", defaultSSLCert, "ssl cert file")
 	pflag.StringP(envSSLKey, "p", defaultSSLKey, "ssl private key file")
+	pflag.StringP(envConfigFilePath, "c", defaultConfigFilePath, "path to config")
 }
 
 // GetConfig returns instance of Config
@@ -58,6 +61,12 @@ func GetConfig() *Config {
 
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
+
+	if s := viper.GetString(envConfigFilePath); s != "" {
+		viper.SetConfigFile(s)
+		viper.SetConfigType("json")
+		viper.ReadInConfig()
+	}
 
 	instance = &Config{
 		Addr:            viper.GetString(envServerAddr),
