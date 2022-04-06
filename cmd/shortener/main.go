@@ -35,7 +35,12 @@ func init() {
 }
 
 func main() {
-	ctx, ctxCancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, ctxCancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+	)
 
 	storage, err := pgsql.NewLinksStoragePG(ctx)
 	if err != nil {
@@ -48,7 +53,7 @@ func main() {
 	}
 	cfg := config.GetConfig()
 
-	server, err := rest.NewAPIServer(service, cfg.Addr)
+	server, err := rest.NewAPIServer(service, cfg.Addr, cfg.EnableHTTPS, cfg.SSLCert, cfg.SSLPrivateKey)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

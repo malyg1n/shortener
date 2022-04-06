@@ -1,45 +1,56 @@
 package config
 
 import (
-	"flag"
-	"os"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
-const (
-	envServerAddr      = "SERVER_ADDRESS"
-	envBaseURL         = "BASE_URL"
-	envFileStoragePath = "FILE_STORAGE_PATH"
-	envSecretKey       = "APP_KEY"
-	envDatabaseDSN     = "DATABASE_DSN"
-
-	defaultServerAddr      = ":8080"
-	defaultBaseURL         = "http://localhost:8080"
-	defaultFileStoragePath = "links.json"
-	defaultSecretKey       = "secret-key"
-	defaultDatabaseDSN     = "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable"
-)
-
-var (
-	addr            *string
-	baseURL         *string
-	fileStoragePath *string
-	databaseDSN     *string
-	instance        *Config = nil
-)
-
+// Config for application
 type Config struct {
 	Addr            string
 	BaseURL         string
 	FileStoragePath string
 	SecretKey       string
 	DatabaseDSN     string
+	EnableHTTPS     bool
+	SSLCert         string
+	SSLPrivateKey   string
 }
 
+const (
+	envServerAddr      = "server_address"
+	envBaseURL         = "base_url"
+	envFileStoragePath = "file_storage_path"
+	envSecretKey       = "app_key"
+	envDatabaseDSN     = "database_dsn"
+	envEnableHTTPS     = "enable_https"
+	envSSLCert         = "ssl_cert"
+	envSSLKey          = "ssl_key"
+	envConfigFilePath  = "config"
+
+	defaultServerAddr      = ":8080"
+	defaultBaseURL         = "http://localhost:8080"
+	defaultFileStoragePath = "links.json"
+	defaultSecretKey       = "secret-key"
+	defaultDatabaseDSN     = "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable"
+	defaultSSLCert         = "certs/cert.crt"
+	defaultSSLKey          = "certs/key.key"
+	defaultConfigFilePath  = ""
+)
+
+var instance *Config
+
 func init() {
-	addr = flag.String("a", "", "Server address and port (default localhost:8080)")
-	baseURL = flag.String("b", "", "Server url (http://localhost:8080)")
-	fileStoragePath = flag.String("f", "", "Path to file for links (default links.json)")
-	databaseDSN = flag.String("d", "", "Database connection string")
+	viper.AutomaticEnv()
+	pflag.StringP(envDatabaseDSN, "d", defaultDatabaseDSN, "database connection string")
+	pflag.StringP(envServerAddr, "a", defaultServerAddr, "run address")
+	pflag.StringP(envBaseURL, "b", defaultBaseURL, "base url")
+	pflag.StringP(envFileStoragePath, "f", defaultFileStoragePath, "base url")
+	pflag.StringP(envSecretKey, "k", defaultSecretKey, "secret key for app")
+	pflag.BoolP(envEnableHTTPS, "s", false, "use https")
+	pflag.StringP(envSSLCert, "r", defaultSSLCert, "ssl cert file")
+	pflag.StringP(envSSLKey, "p", defaultSSLKey, "ssl private key file")
+	pflag.StringP(envConfigFilePath, "c", defaultConfigFilePath, "path to config")
 }
 
 // GetConfig returns instance of Config
@@ -48,66 +59,25 @@ func GetConfig() *Config {
 		return instance
 	}
 
-	flag.Parse()
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
+
+	if s := viper.GetString(envConfigFilePath); s != "" {
+		viper.SetConfigFile(s)
+		viper.SetConfigType("json")
+		viper.ReadInConfig()
+	}
+
 	instance = &Config{
-		Addr:            getAddr(),
-		BaseURL:         getBaseURL(),
-		FileStoragePath: getFileStoragePath(),
-		SecretKey:       getEnv(envSecretKey, defaultSecretKey),
-		DatabaseDSN:     getDatabaseDSN(),
+		Addr:            viper.GetString(envServerAddr),
+		BaseURL:         viper.GetString(envBaseURL),
+		FileStoragePath: viper.GetString(envFileStoragePath),
+		SecretKey:       viper.GetString(envSecretKey),
+		DatabaseDSN:     viper.GetString(envDatabaseDSN),
+		EnableHTTPS:     viper.GetBool(envEnableHTTPS),
+		SSLCert:         viper.GetString(envSSLCert),
+		SSLPrivateKey:   viper.GetString(envSSLKey),
 	}
 
 	return instance
-}
-
-func getAddr() string {
-	if *addr != "" {
-		return *addr
-	}
-	if os.Getenv(envServerAddr) != "" {
-		return os.Getenv(envServerAddr)
-	}
-
-	return defaultServerAddr
-}
-
-func getBaseURL() string {
-	if *baseURL != "" {
-		return *baseURL
-	}
-	if os.Getenv(envBaseURL) != "" {
-		return os.Getenv(envBaseURL)
-	}
-
-	return defaultBaseURL
-}
-
-func getFileStoragePath() string {
-	if *fileStoragePath != "" {
-		return *fileStoragePath
-	}
-	if os.Getenv(envFileStoragePath) != "" {
-		return os.Getenv(envFileStoragePath)
-	}
-
-	return defaultFileStoragePath
-}
-
-func getDatabaseDSN() string {
-	if *databaseDSN != "" {
-		return *databaseDSN
-	}
-	if os.Getenv(envDatabaseDSN) != "" {
-		return os.Getenv(envDatabaseDSN)
-	}
-
-	return defaultDatabaseDSN
-}
-
-func getEnv(envName, defaultValue string) string {
-	if os.Getenv(envName) != "" {
-		return os.Getenv(envName)
-	}
-
-	return defaultValue
 }
