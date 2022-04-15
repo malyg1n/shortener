@@ -5,7 +5,7 @@ import (
 	"github.com/malyg1n/shortener/services/linker"
 )
 
-// HandlerManager manager of handlers.
+// HandlerManager manager of proto.
 type HandlerManager struct {
 	service linker.Linker
 }

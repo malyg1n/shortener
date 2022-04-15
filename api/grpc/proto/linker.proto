@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+option go_package = "api/grpc/proto";
+
+package proto;
+
+message SetLinkRequest {
+  string originalLink = 1;
+  uint64 userID = 2;
+}
+
+message SetLinkResponse {
+  string shortLink = 1;
+  string error = 2;
+}
+
+message GetLinkRequest {
+  string shortLink = 1;
+}
+
+message GetLinkResponse {
+  string originalLink = 1;
+  string error = 2;
+}
+
+message GetUserLinksRequest {
+  uint64 userID  = 1;
+}
+
+message BaseLinkResponse {
+  string originalUrl = 1;
+  string shortUrl = 2;
+}
+
+message BaseLinksResponse {
+  repeated BaseLinkResponse links = 1;
+}
+
+message CorrelationLinkRequest {
+  string correlationId = 1;
+  string originalUrl = 2;
+}
+
+message CorrelationLinkResponse {
+  string correlationId = 1;
+  string shortUrl = 2;
+}
+
+message CorrelationLinksRequest {
+  uint64 userId = 1;
+  repeated CorrelationLinkRequest links = 2;
+}
+
+message CorrelationLinksResponse {
+  repeated CorrelationLinkResponse links = 1;
+}
+
+message DeleteLinksRequest {
+  uint64 userID = 1;
+  repeated string shortLinks = 2;
+}
+
+message DeleteLinksResponse {
+  string error = 1;
+}
+
+message StatisticRequest {
+  string ip = 1;
+}
+
+message StatisticResponse {
+  uint64 users = 1;
+  uint64 urls = 2;
+}
+
+service Linker {
+  rpc SetLink(SetLinkRequest) returns (SetLinkResponse);
+  rpc GetLink(GetLinkRequest) returns (GetLinkResponse);
+  rpc GetUserLinks(GetUserLinksRequest) returns (BaseLinksResponse);
+  rpc SetBatchLinks(CorrelationLinkRequest) returns (CorrelationLinksResponse);
+  rpc DeleteLinks(DeleteLinksRequest) returns (DeleteLinksResponse);
+  rpc Statistic(StatisticRequest) returns (StatisticResponse);
+}
