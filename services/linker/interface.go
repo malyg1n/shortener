@@ -14,4 +14,5 @@ type Linker interface {
 	SetBatchLinks(ctx context.Context, links []model.Link, userUUID string) ([]model.Link, error)
 	PingStorage() error
 	DeleteLinks(ctx context.Context, urls []string, userUUID string)
+	Statistic(ctx context.Context) (int, int, error)
 }

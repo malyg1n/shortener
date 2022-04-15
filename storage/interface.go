@@ -13,6 +13,7 @@ type LinksStorage interface {
 	GetLinkByOriginal(ctx context.Context, url string) (string, error)
 	SetBatchLinks(ctx context.Context, links []model.Link, userUUID string) error
 	MarkLinkAsRemoved(ctx context.Context, link model.Link) error
+	Statistic(ctx context.Context) (int, int, error)
 	Close() error
 	Ping() error
 }

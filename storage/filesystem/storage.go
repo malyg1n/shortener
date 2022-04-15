@@ -129,6 +129,11 @@ func (s *LinksStorageFile) MarkLinkAsRemoved(ctx context.Context, link model.Lin
 	return nil
 }
 
+// Statistic returns count users and links from file.
+func (s *LinksStorageFile) Statistic(ctx context.Context) (int, int, error) {
+	return len(s.links.UserLinks), len(s.links.Links), nil
+}
+
 // Close file handler.
 func (s *LinksStorageFile) Close() error {
 	return s.uploadLinks()
