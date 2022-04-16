@@ -94,7 +94,7 @@ func (h *LinkerHandler) SetBatchLinks(ctx context.Context, in *pb.CorrelationLin
 		return &response, nil
 	}
 
-	canonicalLinks := make([]model.Link, len(in.Links), len(in.Links))
+	canonicalLinks := make([]model.Link, len(in.Links))
 	for k, lnk := range in.Links {
 		canonicalLinks[k] = model.Link{
 			ShortURL:    "",

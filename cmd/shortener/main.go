@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/malyg1n/shortener/api/grpc"
 	"github.com/malyg1n/shortener/api/rest"
 	"github.com/malyg1n/shortener/pkg/config"
 	v1 "github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage/pgsql"
 	"log"
+	"net"
 	"os/signal"
 	"syscall"
 )
@@ -52,13 +54,22 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 	cfg := config.GetConfig()
+	if cfg.ApiType == "grpc" {
+		listen, err := net.Listen("tcp", cfg.Addr)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 
-	server, err := rest.NewAPIServer(service, cfg.Addr, cfg.EnableHTTPS, cfg.SSLCert, cfg.SSLPrivateKey)
-	if err != nil {
-		log.Fatalf("%v", err)
+		server, err := grpc.NewAPIServer(service, listen)
+		server.Run(ctx)
+	} else {
+		server, err := rest.NewAPIServer(service, cfg.Addr, cfg.EnableHTTPS, cfg.SSLCert, cfg.SSLPrivateKey)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+
+		server.Run(ctx)
 	}
-
-	server.Run(ctx)
 
 	<-ctx.Done()
 

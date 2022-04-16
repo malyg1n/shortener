@@ -84,6 +84,5 @@ func (srv *APIServer) Run(ctx context.Context) {
 			err := srv.server.ListenAndServe()
 			log.Println(err.Error())
 		}
-
 	}()
 }

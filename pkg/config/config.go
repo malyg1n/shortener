@@ -16,6 +16,7 @@ type Config struct {
 	SSLCert         string
 	SSLPrivateKey   string
 	TrustedSubnet   string
+	ApiType         string
 }
 
 const (
@@ -29,6 +30,7 @@ const (
 	envSSLKey          = "ssl_key"
 	envConfigFilePath  = "config"
 	envTrustedSubnet   = "trusted_subnet"
+	envApiType         = "api_type"
 
 	defaultServerAddr      = ":8080"
 	defaultBaseURL         = "http://localhost:8080"
@@ -39,6 +41,7 @@ const (
 	defaultSSLKey          = "certs/key.key"
 	defaultConfigFilePath  = ""
 	defaultTrustedSubnet   = ""
+	defaultApiType         = "rest"
 )
 
 var instance *Config
@@ -54,7 +57,8 @@ func init() {
 	pflag.StringP(envSSLCert, "r", defaultSSLCert, "ssl cert file")
 	pflag.StringP(envSSLKey, "p", defaultSSLKey, "ssl private key file")
 	pflag.StringP(envConfigFilePath, "c", defaultConfigFilePath, "path to config")
-	pflag.StringP(envTrustedSubnet, "t", defaultTrustedSubnet, "trusted_subnet")
+	pflag.StringP(envTrustedSubnet, "t", defaultTrustedSubnet, "trusted subnet")
+	pflag.StringP(envApiType, "g", defaultApiType, "type of api")
 }
 
 // GetConfig returns instance of Config
@@ -82,6 +86,7 @@ func GetConfig() *Config {
 		SSLCert:         viper.GetString(envSSLCert),
 		SSLPrivateKey:   viper.GetString(envSSLKey),
 		TrustedSubnet:   viper.GetString(envTrustedSubnet),
+		ApiType:         viper.GetString(envApiType),
 	}
 
 	return instance
