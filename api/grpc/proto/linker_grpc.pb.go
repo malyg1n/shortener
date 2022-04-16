@@ -25,7 +25,7 @@ type LinkerClient interface {
 	SetLink(ctx context.Context, in *SetLinkRequest, opts ...grpc.CallOption) (*SetLinkResponse, error)
 	GetLink(ctx context.Context, in *GetLinkRequest, opts ...grpc.CallOption) (*GetLinkResponse, error)
 	GetUserLinks(ctx context.Context, in *GetUserLinksRequest, opts ...grpc.CallOption) (*BaseLinksResponse, error)
-	SetBatchLinks(ctx context.Context, in *CorrelationLinkRequest, opts ...grpc.CallOption) (*CorrelationLinksResponse, error)
+	SetBatchLinks(ctx context.Context, in *CorrelationLinksRequest, opts ...grpc.CallOption) (*CorrelationLinksResponse, error)
 	DeleteLinks(ctx context.Context, in *DeleteLinksRequest, opts ...grpc.CallOption) (*DeleteLinksResponse, error)
 	Statistic(ctx context.Context, in *StatisticRequest, opts ...grpc.CallOption) (*StatisticResponse, error)
 }
@@ -65,7 +65,7 @@ func (c *linkerClient) GetUserLinks(ctx context.Context, in *GetUserLinksRequest
 	return out, nil
 }
 
-func (c *linkerClient) SetBatchLinks(ctx context.Context, in *CorrelationLinkRequest, opts ...grpc.CallOption) (*CorrelationLinksResponse, error) {
+func (c *linkerClient) SetBatchLinks(ctx context.Context, in *CorrelationLinksRequest, opts ...grpc.CallOption) (*CorrelationLinksResponse, error) {
 	out := new(CorrelationLinksResponse)
 	err := c.cc.Invoke(ctx, "/proto.Linker/SetBatchLinks", in, out, opts...)
 	if err != nil {
@@ -99,7 +99,7 @@ type LinkerServer interface {
 	SetLink(context.Context, *SetLinkRequest) (*SetLinkResponse, error)
 	GetLink(context.Context, *GetLinkRequest) (*GetLinkResponse, error)
 	GetUserLinks(context.Context, *GetUserLinksRequest) (*BaseLinksResponse, error)
-	SetBatchLinks(context.Context, *CorrelationLinkRequest) (*CorrelationLinksResponse, error)
+	SetBatchLinks(context.Context, *CorrelationLinksRequest) (*CorrelationLinksResponse, error)
 	DeleteLinks(context.Context, *DeleteLinksRequest) (*DeleteLinksResponse, error)
 	Statistic(context.Context, *StatisticRequest) (*StatisticResponse, error)
 	mustEmbedUnimplementedLinkerServer()
@@ -118,7 +118,7 @@ func (UnimplementedLinkerServer) GetLink(context.Context, *GetLinkRequest) (*Get
 func (UnimplementedLinkerServer) GetUserLinks(context.Context, *GetUserLinksRequest) (*BaseLinksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserLinks not implemented")
 }
-func (UnimplementedLinkerServer) SetBatchLinks(context.Context, *CorrelationLinkRequest) (*CorrelationLinksResponse, error) {
+func (UnimplementedLinkerServer) SetBatchLinks(context.Context, *CorrelationLinksRequest) (*CorrelationLinksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetBatchLinks not implemented")
 }
 func (UnimplementedLinkerServer) DeleteLinks(context.Context, *DeleteLinksRequest) (*DeleteLinksResponse, error) {
@@ -195,7 +195,7 @@ func _Linker_GetUserLinks_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _Linker_SetBatchLinks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CorrelationLinkRequest)
+	in := new(CorrelationLinksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func _Linker_SetBatchLinks_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/proto.Linker/SetBatchLinks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LinkerServer).SetBatchLinks(ctx, req.(*CorrelationLinkRequest))
+		return srv.(LinkerServer).SetBatchLinks(ctx, req.(*CorrelationLinksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
