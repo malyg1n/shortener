@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/malyg1n/shortener/api"
 	"github.com/malyg1n/shortener/api/grpc"
 	"github.com/malyg1n/shortener/api/rest"
 	"github.com/malyg1n/shortener/pkg/config"
@@ -54,23 +55,26 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 	cfg := config.GetConfig()
-	if cfg.ApiType == "grpc" {
+	var server api.Server
+
+	if cfg.APIType == "grpc" {
 		listen, err := net.Listen("tcp", cfg.Addr)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
 
-		server, err := grpc.NewAPIServer(service, listen)
-		server.Run(ctx)
-	} else {
-		server, err := rest.NewAPIServer(service, cfg.Addr, cfg.EnableHTTPS, cfg.SSLCert, cfg.SSLPrivateKey)
+		server, err = grpc.NewAPIServer(service, listen)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-
-		server.Run(ctx)
+	} else {
+		server, err = rest.NewAPIServer(service, cfg.Addr, cfg.EnableHTTPS, cfg.SSLCert, cfg.SSLPrivateKey)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 	}
 
+	server.Run(ctx)
 	<-ctx.Done()
 
 	storage.Close()

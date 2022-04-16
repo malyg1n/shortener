@@ -26,8 +26,8 @@ func TestAPIServer_Run(t *testing.T) {
 	}()
 
 	conn, err := grpc.Dial(`:32101`, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	defer conn.Close()
 	assert.NoError(t, err)
+	defer conn.Close()
 	c := pb.NewLinkerClient(conn)
 	testRoutes(c, t)
 
