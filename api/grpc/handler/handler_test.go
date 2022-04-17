@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	pb "github.com/malyg1n/shortener/api/grpc/proto"
+	"github.com/malyg1n/shortener/pkg/config"
 	v1 "github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage/inmemory"
 	"github.com/stretchr/testify/assert"
@@ -103,11 +104,16 @@ func TestLinkerHandler_SetBatchLinks(t *testing.T) {
 		OriginalURL:   "https://ya.com",
 	})
 	batch := &pb.CorrelationLinksRequest{
-		UserID: userID,
+		UserID: "fake",
 		Links:  cLinks,
 	}
 
 	rsp, err := testHandler.SetBatchLinks(context.Background(), batch)
+	assert.NoError(t, err)
+	assert.Equal(t, "invalid user id", rsp.Error)
+
+	batch.UserID = userID
+	rsp, err = testHandler.SetBatchLinks(context.Background(), batch)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(rsp.Links))
 	assert.Equal(t, "1", rsp.Links[0].CorrelationId)
@@ -120,6 +126,7 @@ func TestLinkerHandler_GetUserLinks(t *testing.T) {
 
 	rq1 := &pb.GetUserLinksRequest{UserID: userID}
 	rq2 := &pb.GetUserLinksRequest{UserID: uuid.NewString()}
+	rq3 := &pb.GetUserLinksRequest{UserID: "fake id"}
 
 	rsp, err := testHandler.GetUserLinks(context.Background(), rq1)
 	assert.NoError(t, err)
@@ -130,12 +137,21 @@ func TestLinkerHandler_GetUserLinks(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(rsp.Links))
 	assert.Equal(t, "no content", rsp.Error)
+
+	rsp, err = testHandler.GetUserLinks(context.Background(), rq3)
+	assert.NoError(t, err)
+	assert.Equal(t, "invalid user id", rsp.Error)
 }
 
 func TestLinkerHandler_DeleteLinks(t *testing.T) {
-	userID := uuid.NewString()
-	rq := &pb.DeleteLinksRequest{UserID: userID}
+	rq := &pb.DeleteLinksRequest{UserID: "fake id"}
 	rsp, err := testHandler.DeleteLinks(context.Background(), rq)
+	assert.NoError(t, err)
+	assert.Equal(t, "invalid user id", rsp.Error)
+
+	userID := uuid.NewString()
+	rq = &pb.DeleteLinksRequest{UserID: userID}
+	rsp, err = testHandler.DeleteLinks(context.Background(), rq)
 	assert.NoError(t, err)
 	assert.Equal(t, "", rsp.Error)
 }
@@ -145,9 +161,9 @@ func TestLinkerHandler_Statistic(t *testing.T) {
 	th := NewLinkerHandler(sv)
 	userID1 := uuid.NewString()
 	userID2 := uuid.NewString()
-	sv.SetLink(context.Background(), "https://mail.ru11", userID1)
-	sv.SetLink(context.Background(), "https://mail.ru22", userID1)
-	sv.SetLink(context.Background(), "https://mail.ru33", userID2)
+	sv.SetLink(context.Background(), "https://mail-1.ru", userID1)
+	sv.SetLink(context.Background(), "https://mail-2.ru", userID1)
+	sv.SetLink(context.Background(), "https://mail-3.ru", userID2)
 
 	tests := []struct {
 		name   string
@@ -165,8 +181,17 @@ func TestLinkerHandler_Statistic(t *testing.T) {
 			urls:   3,
 			err:    "",
 		},
+		{
+			name:   "forbidden",
+			subnet: "127.0.0.0/16",
+			ip:     "127.1.0.1",
+			users:  0,
+			urls:   0,
+			err:    "forbidden",
+		},
 	}
 	for _, tt := range tests {
+		config.GetConfig().TrustedSubnet = tt.subnet
 		reg := &pb.StatisticRequest{IP: tt.ip}
 		rsp, err := th.Statistic(context.Background(), reg)
 		assert.NoError(t, err)

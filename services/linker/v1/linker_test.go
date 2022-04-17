@@ -22,30 +22,31 @@ func TestDefaultLinker_PingStorage(t *testing.T) {
 
 func TestDefaultLinker_SetLink(t *testing.T) {
 	tests := []struct {
-		name     string
-		link     string
-		hasError bool
+		name string
+		link string
+		err  string
 	}{
 		{
-			name:     "valid",
-			link:     "https://google.info",
-			hasError: false,
+			name: "valid",
+			link: "https://google.info",
+			err:  "",
 		},
 		{
-			name:     "double",
-			link:     "https://google.info",
-			hasError: true,
+			name: "double",
+			link: "https://google.info",
+			err:  "link already saved",
 		},
 		{
-			name:     "invalid",
-			link:     "123....",
-			hasError: true,
+			name: "invalid",
+			link: "123....",
+			err:  "invalid input",
 		},
 	}
 	for _, tt := range tests {
 		_, err := svc.SetLink(context.Background(), tt.link, user1)
-		if tt.hasError {
+		if tt.err != "" {
 			assert.Error(t, err)
+			assert.Equal(t, tt.err, err.Error())
 		} else {
 			assert.NoError(t, err)
 		}
@@ -81,6 +82,7 @@ func TestDefaultLinker_SetBatchLinks(t *testing.T) {
 
 func TestDefaultLinker_GetLink(t *testing.T) {
 	rLink, err := svc.SetLink(context.Background(), "https://booble.kom", user1)
+	assert.NoError(t, err)
 	svc.DeleteLinks(context.Background(), []string{rLink}, user1)
 	time.Sleep(time.Millisecond * 500)
 
@@ -128,31 +130,32 @@ func TestDefaultLinker_GetLinkByOriginal(t *testing.T) {
 	_, err := svc.SetLink(context.Background(), "https://mail.info", user1)
 	assert.NoError(t, err)
 	tests := []struct {
-		name     string
-		link     string
-		hasError bool
+		name string
+		link string
+		err  string
 	}{
 		{
-			name:     "valid",
-			link:     "https://mail.info",
-			hasError: false,
+			name: "valid",
+			link: "https://mail.info",
+			err:  "",
 		},
 		{
-			name:     "invalid link",
-			link:     "fake link 1",
-			hasError: true,
+			name: "invalid link",
+			link: "fake link 1",
+			err:  "not found",
 		},
 		{
-			name:     "not exist",
-			link:     "https://habr.com",
-			hasError: true,
+			name: "not exist",
+			link: "https://habr.com",
+			err:  "not found",
 		},
 	}
 
 	for _, tt := range tests {
 		_, err := svc.GetLinkByOriginal(context.Background(), tt.link)
-		if tt.hasError {
+		if tt.err != "" {
 			assert.Error(t, err)
+			assert.Equal(t, tt.err, err.Error())
 		} else {
 			assert.NoError(t, err)
 		}

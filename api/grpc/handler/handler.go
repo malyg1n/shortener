@@ -139,7 +139,7 @@ func (h *LinkerHandler) Statistic(ctx context.Context, in *pb.StatisticRequest) 
 	var response pb.StatisticResponse
 
 	sn := config.GetConfig().TrustedSubnet
-	if subnet.CheckSubnet(in.IP, sn) {
+	if !subnet.CheckSubnet(in.IP, sn) {
 		response.Error = "forbidden"
 		return &response, nil
 	}
