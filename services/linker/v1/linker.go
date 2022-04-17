@@ -70,6 +70,7 @@ func (s *DefaultLinker) SetLink(ctx context.Context, link, userUUID string) (str
 	return linkID, nil
 }
 
+// SetBatchLinks stores links by batch.
 func (s *DefaultLinker) SetBatchLinks(ctx context.Context, links []model.Link, userUUID string) ([]model.Link, error) {
 	insertLinks := make([]model.Link, 0, len(links))
 	for k, lnk := range links {
@@ -119,4 +120,9 @@ func (s *DefaultLinker) DeleteLinks(ctx context.Context, urls []string, userUUID
 			}
 		}(link)
 	}
+}
+
+// Statistic returns count users and links from storage.
+func (s *DefaultLinker) Statistic(ctx context.Context) (int, int, error) {
+	return s.storage.Statistic(ctx)
 }

@@ -125,6 +125,26 @@ func (l LinksStoragePG) MarkLinkAsRemoved(ctx context.Context, link model.Link) 
 	return err
 }
 
+// Statistic returns count users and links from db.
+func (l LinksStoragePG) Statistic(ctx context.Context) (int, int, error) {
+	var countUsers, countLinks int
+	err := l.db.GetContext(ctx, &countLinks, "select count(*) from links where is_deleted=0")
+	if err != nil {
+		return 0, 0, err
+	}
+
+	err = l.db.GetContext(
+		ctx,
+		&countUsers,
+		"select count(*) from (select user_id from links where is_deleted=0 group by user_id) as c",
+	)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return countUsers, countLinks, nil
+}
+
 // Close database handler.
 func (l LinksStoragePG) Close() error {
 	return l.db.Close()

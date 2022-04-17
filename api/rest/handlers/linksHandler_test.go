@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/malyg1n/shortener/api/rest/middleware"
+	"github.com/malyg1n/shortener/pkg/config"
 	"github.com/malyg1n/shortener/services/linker"
 	"github.com/malyg1n/shortener/services/linker/v1"
 	"github.com/malyg1n/shortener/storage"
@@ -417,6 +418,55 @@ func (s *HandlerSuite) TestDeleteLinks() {
 	})
 }
 
+func (s *HandlerSuite) TestStatistics() {
+	tests := []struct {
+		name         string
+		ip           string
+		net          string
+		expectedCode int
+	}{
+		{
+			name:         "valid",
+			ip:           "127.0.0.1",
+			net:          "127.0.0.0/16",
+			expectedCode: 200,
+		},
+		{
+			name:         "invalid ip",
+			ip:           "127.1.0.1",
+			net:          "127.0.0.0/16",
+			expectedCode: 403,
+		},
+		{
+			name:         "empty subnet",
+			ip:           "127.0.0.1",
+			net:          "",
+			expectedCode: 403,
+		},
+		{
+			name:         "empty ip",
+			ip:           "",
+			net:          "127.0.0.0/16",
+			expectedCode: 403,
+		},
+	}
+	cfg := config.GetConfig()
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(s.getRouter())
+			defer ts.Close()
+			headers := map[string]string{"X-Real-IP": tt.ip}
+			cfg.TrustedSubnet = tt.net
+			res, _ := testRequest(t, ts, http.MethodGet, "/api/internal/stats", nil, headers)
+			defer func() {
+				_ = res.Body.Close()
+			}()
+
+			assert.Equal(t, tt.expectedCode, res.StatusCode)
+		})
+	}
+}
+
 func (s *HandlerSuite) getRouter() chi.Router {
 	router := chi.NewRouter().With(middleware.Compress, middleware.Decompress, middleware.Cookies)
 	router.Get("/{linkId}", s.handler.GetLink)
@@ -425,6 +475,7 @@ func (s *HandlerSuite) getRouter() chi.Router {
 	router.Get("/user/urls", s.handler.GetLinksByUser)
 	router.Post("/api/shorten/batch", s.handler.APISetBatchLinks)
 	router.Delete("/api/user/urls", s.handler.DeleteUserLinks)
+	router.With(middleware.CheckSubnet).Get("/api/internal/stats", s.handler.Statistic)
 
 	return router
 }

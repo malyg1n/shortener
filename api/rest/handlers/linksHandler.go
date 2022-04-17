@@ -223,6 +223,31 @@ func (hm *HandlerManager) DeleteUserLinks(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// Statistic returns count link and users.
+func (hm *HandlerManager) Statistic(w http.ResponseWriter, r *http.Request) {
+	users, links, err := hm.service.Statistic(r.Context())
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	stat := models.Statistic{
+		Urls:  links,
+		Users: users,
+	}
+
+	result, err := json.Marshal(stat)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
 func getFullURL(linkID string) string {
 	cfg := config.GetConfig()
 	baseURL := strings.TrimRight(cfg.BaseURL, "/")

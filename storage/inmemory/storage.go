@@ -120,6 +120,11 @@ func (s *LinksStorageMap) MarkLinkAsRemoved(ctx context.Context, link model.Link
 	return nil
 }
 
+// Statistic returns count users and links from memory.
+func (s *LinksStorageMap) Statistic(ctx context.Context) (int, int, error) {
+	return len(s.links.UserLinks), len(s.links.Links), nil
+}
+
 // Close storage.
 func (s *LinksStorageMap) Close() error {
 	return nil

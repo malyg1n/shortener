@@ -63,6 +63,7 @@ func (srv *APIServer) Run(ctx context.Context) {
 	router.Get("/ping", srv.handlerManager.PingDB)
 	router.Post("/api/shorten/batch", srv.handlerManager.APISetBatchLinks)
 	router.Delete("/api/user/urls", srv.handlerManager.DeleteUserLinks)
+	router.With(middleware.CheckSubnet).Get("/api/internal/stats", srv.handlerManager.Statistic)
 
 	srv.server.Handler = router
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -83,6 +84,5 @@ func (srv *APIServer) Run(ctx context.Context) {
 			err := srv.server.ListenAndServe()
 			log.Println(err.Error())
 		}
-
 	}()
 }
